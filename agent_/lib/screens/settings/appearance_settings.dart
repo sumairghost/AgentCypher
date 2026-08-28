@@ -52,6 +52,12 @@ class AppearanceSettingsPage extends StatelessWidget {
                   ),
                   const _AccentSelector(),
                   CypherSectionHeader(
+                    title: 'Custom accent',
+                    subtitle:
+                        'Curated colors or a color you blend yourself — applied as an accent throughout Cypher.',
+                  ),
+                  const _CustomAccentSection(),
+                  CypherSectionHeader(
                     title: 'Background',
                     subtitle: 'Gradient style used behind the whole app.',
                   ),
@@ -376,6 +382,229 @@ class _AdvancedBackgroundControls extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Custom accent: a curated professional palette plus an advanced HSV
+/// blender. Selecting either applies a live custom accent through the theme
+/// controller; components, gradients, and the voice orb all follow it.
+///
+/// The constant colors below are the *user-facing picker data* (the palette
+/// of colors to choose from), not theme styling, so they are intentionally
+/// independent of the active preset.
+class _CustomAccentSection extends StatelessWidget {
+  const _CustomAccentSection();
+
+  static const List<Color> _curated = <Color>[
+    Color(0xFF9F263D), // Crimson
+    Color(0xFFC73E4C), // Ruby
+    Color(0xFFA02542), // Burgundy
+    Color(0xFF72253D), // Wine
+    Color(0xFF7A3B69), // Plum
+    Color(0xFFBF5A6C), // Rose
+    Color(0xFFB25E3C), // Copper
+    Color(0xFFC9862B), // Amber
+    Color(0xFFC9A227), // Gold
+    Color(0xFF5560B5), // Indigo
+    Color(0xFF3F5C9E), // Navy
+    Color(0xFF5A6B7C), // Slate
+    Color(0xFF746E66), // Graphite
+    Color(0xFF9A9790), // Silver
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = themeController;
+    final isCustom = controller.isCustomAccent;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: CypherSpacing.space2,
+          runSpacing: CypherSpacing.space2,
+          children: [
+            for (final color in _curated)
+              _SwatchCircle(
+                color: color,
+                selected: isCustom && controller.customAccent == color,
+                onTap: () => controller.setCustomAccent(color),
+              ),
+          ],
+        ),
+        const SizedBox(height: CypherSpacing.space6),
+        const _CustomColorBlender(),
+        if (isCustom) ...[
+          const SizedBox(height: CypherSpacing.space4),
+          OutlinedButton.icon(
+            onPressed: controller.clearCustomAccent,
+            icon: const Icon(Icons.undo_rounded, size: 16),
+            label: const Text('Use the preset accent instead'),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SwatchCircle extends StatelessWidget {
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SwatchCircle({
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cypher;
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+          border: Border.all(
+            color: selected ? c.colors.textPrimary : c.colors.borderLight,
+            width: selected ? 2.5 : 1,
+          ),
+        ),
+        child: selected
+            ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+            : null,
+      ),
+    );
+  }
+}
+
+/// Dependency-free HSV color blender with a live preview swatch.
+class _CustomColorBlender extends StatefulWidget {
+  const _CustomColorBlender();
+
+  @override
+  State<_CustomColorBlender> createState() => _CustomColorBlenderState();
+}
+
+class _CustomColorBlenderState extends State<_CustomColorBlender> {
+  double _hue = 350; // crimson-ish seed
+  double _sat = 0.52;
+  double _val = 0.5;
+
+  Color get _preview => HSVColor.fromAHSV(1, _hue, _sat, _val).toColor();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cypher;
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: CypherSpacing.space4),
+        title: Text(
+          'Blend a custom color',
+          style: c.typography.settingsItemTitle,
+        ),
+        subtitle: Text(
+          'Hue, saturation, and lightness — applied as the accent.',
+          style: c.typography.settingsItemSubtitle,
+        ),
+        iconColor: c.colors.textTertiary,
+        collapsedIconColor: c.colors.textTertiary,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _preview,
+                  border: Border.all(color: c.colors.borderLight),
+                ),
+              ),
+              const SizedBox(width: CypherSpacing.space4),
+              Expanded(
+                child: Text(
+                  '#${(_preview.value.toRadixString(16).padLeft(8, '0')).substring(2).toUpperCase()}',
+                  style: c.typography.bodyMedium,
+                ),
+              ),
+              CypherButton(
+                label: 'Apply',
+                variant: CypherButtonVariant.secondary,
+                onPressed: () => themeController.setCustomAccent(_preview),
+              ),
+            ],
+          ),
+          const SizedBox(height: CypherSpacing.space4),
+          _SliderRow(
+            label: 'Hue',
+            value: _hue,
+            min: 0,
+            max: 360,
+            onChanged: (v) => setState(() => _hue = v),
+          ),
+          _SliderRow(
+            label: 'Saturation',
+            value: _sat,
+            min: 0,
+            max: 1,
+            onChanged: (v) => setState(() => _sat = v),
+          ),
+          _SliderRow(
+            label: 'Lightness',
+            value: _val,
+            min: 0.05,
+            max: 0.85,
+            onChanged: (v) => setState(() => _val = v),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SliderRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final ValueChanged<double> onChanged;
+
+  const _SliderRow({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cypher;
+    return Row(
+      children: [
+        SizedBox(
+          width: 84,
+          child: Text(label, style: c.typography.settingsItemSubtitle),
+        ),
+        Expanded(
+          child: Slider(
+            value: value.clamp(min, max).toDouble(),
+            min: min,
+            max: max,
+            label: value.round().toString(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 }

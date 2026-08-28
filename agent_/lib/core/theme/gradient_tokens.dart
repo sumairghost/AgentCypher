@@ -43,12 +43,17 @@ class CypherGradientConfig {
   final AlignmentGeometry position;
   final AccentFamily accentFamily;
 
+  /// When non-null, gradients derive from this user-selected custom accent
+  /// instead of the preset family ramp.
+  final Color? customAccent;
+
   const CypherGradientConfig({
     this.style = GradientStyle.ambient,
     this.intensity = GradientIntensity.subtle,
     this.blur = 100.0,
     this.position = Alignment.center,
     this.accentFamily = AccentFamily.crimson,
+    this.customAccent,
   });
 
   CypherGradientConfig copyWith({
@@ -57,6 +62,7 @@ class CypherGradientConfig {
     double? blur,
     AlignmentGeometry? position,
     AccentFamily? accentFamily,
+    Color? customAccent,
   }) {
     return CypherGradientConfig(
       style: style ?? this.style,
@@ -64,6 +70,7 @@ class CypherGradientConfig {
       blur: blur ?? this.blur,
       position: position ?? this.position,
       accentFamily: accentFamily ?? this.accentFamily,
+      customAccent: customAccent ?? this.customAccent,
     );
   }
 }
@@ -78,19 +85,24 @@ class CypherGradientTokens {
     required this.config,
   });
 
+  /// Accent ramp: custom user color wins when set, otherwise the preset family.
+  Map<int, Color> get _accentMap => config.customAccent == null
+      ? config.accentFamily.colors
+      : CypherColorPalette.shadeRamp(config.customAccent!);
+
   /// Get the base accent color for gradients
   Color get _accentColor {
-    final palette = config.accentFamily.colors;
+    final palette = _accentMap;
     return isDark ? palette[400]! : palette[600]!;
   }
 
   Color get _accentColorLight {
-    final palette = config.accentFamily.colors;
+    final palette = _accentMap;
     return isDark ? palette[300]! : palette[500]!;
   }
 
   Color get _accentColorMuted {
-    final palette = config.accentFamily.colors;
+    final palette = _accentMap;
     return isDark ? palette[200]! : palette[400]!;
   }
 

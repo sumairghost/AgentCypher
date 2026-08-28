@@ -161,6 +161,29 @@ class CypherColorPalette {
   static const Color info700 = Color(0xFF2A7ED0);
   static const Color info800 = Color(0xFF2F8EE9);
   static const Color info900 = Color(0xFF349EF2);
+
+  /// Derives a professional 9-shade accent ramp from a user-chosen color.
+  ///
+  /// Indices follow the palette convention (50 = darkest, 500 = primary,
+  /// 900 = brightest): lower indices darken toward black, higher indices
+  /// brighten toward white. `500` is the primary color itself. Used by the
+  /// custom-accent theme feature so gradients, borders, surfaces, and the
+  /// voice orb all derive from one user color.
+  static Map<int, Color> shadeRamp(Color primary) {
+    Color blend(Color target, double t) => Color.lerp(primary, target, t)!;
+    return <int, Color>{
+      50: blend(Colors.white, 0.82),
+      100: blend(Colors.white, 0.66),
+      200: blend(Colors.white, 0.5),
+      300: blend(Colors.white, 0.34),
+      400: blend(Colors.white, 0.18),
+      500: primary,
+      600: blend(Colors.black, 0.18),
+      700: blend(Colors.black, 0.34),
+      800: blend(Colors.black, 0.5),
+      900: blend(Colors.black, 0.66),
+    };
+  }
 }
 
 /// Semantic color tokens - these are what widgets should use
@@ -168,13 +191,20 @@ class CypherColorTokens {
   final bool isDark;
   final AccentFamily accentFamily;
 
+  /// When non-null, overrides the accent-family ramp with a user-selected
+  /// custom accent (see [CypherColorPalette.shadeRamp]).
+  final Color? customAccent;
+
   const CypherColorTokens({
     required this.isDark,
     required this.accentFamily,
+    this.customAccent,
   });
 
-  // Get accent colors for current family
-  Map<int, Color> get _accent => accentFamily.colors;
+  // Get accent colors for current family (or the custom ramp when set).
+  Map<int, Color> get _accent => customAccent == null
+      ? accentFamily.colors
+      : CypherColorPalette.shadeRamp(customAccent!);
 
   // Background tokens
   Color get background => isDark ? CypherColorPalette.charcoal600 : CypherColorPalette.warmWhite100;

@@ -1,0 +1,12 @@
+=== AssistantOrb usage ===
+469: child: AssistantOrb(phase: _phase, size: 56),
+509: AssistantOrb(phase: _phase, size: 36),
+=== getSoundLevel refs ===
+=== BALANCE ===
+lib\core\ui\cypher_voice_orb.dart | OK | braces 40/40 parens 259/259 brack 12/12
+lib\core\theme\color_tokens.dart | OK | braces 11/11 parens 181/181 brack 7/7
+lib\core\theme\gradient_tokens.dart | OK | braces 18/18 parens 85/85 brack 25/25
+lib\core\theme\cypher_theme.dart | OK | braces 21/21 parens 160/160 brack 1/1
+lib\core\theme\theme_controller.dart | OK | braces 34/34 parens 102/102 brack 1/1
+lib\screens\settings\appearance_settings.dart | OK | braces 36/36 parens 231/231 brack 20/20
+lib\widgets\message_bubble.dart | OK | braces 21/21 parens 128/128 brack 7/7

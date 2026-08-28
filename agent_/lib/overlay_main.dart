@@ -33,6 +33,8 @@ class _OverlayAppState extends State<OverlayApp> {
   bool _isSent = false;
   bool _isListening = false;
   bool _speechReady = false;
+  double _audioLevel = 0;
+  Timer? _audioPoller;
   final stt.SpeechToText _speech = stt.SpeechToText();
   final List<ChatMessage> _messages = [];
 
@@ -52,13 +54,20 @@ class _OverlayAppState extends State<OverlayApp> {
         .initialize(
           onError: (error) {
             if (!mounted) return;
+            _stopAudioPoller();
             setState(() => _isListening = false);
             log('Overlay speech error: $error');
           },
           onStatus: (status) {
             if (!mounted) return;
             if (status == 'notListening' || status == 'done') {
-              setState(() => _isListening = false);
+              _stopAudioPoller();
+              setState(() {
+                _isListening = false;
+                if (_phase == AssistantOverlayPhase.listening) {
+                  _phase = AssistantOverlayPhase.idle;
+                }
+              });
             }
           },
         )
@@ -93,6 +102,7 @@ class _OverlayAppState extends State<OverlayApp> {
   void dispose() {
     _overlaySubscription?.cancel();
     _executor?.cancel();
+    _stopAudioPoller();
     unawaited(_speech.stop().catchError((_) {}));
     _taskController.dispose();
     _scrollController.dispose();
@@ -195,12 +205,20 @@ class _OverlayAppState extends State<OverlayApp> {
   Future<void> _toggleListening() async {
     if (!mounted) return;
     if (_isListening) {
+      _stopAudioPoller();
       try {
         await _speech.stop();
       } catch (error) {
         log('Overlay speech stop failed: $error');
       }
-      if (mounted) setState(() => _isListening = false);
+      if (mounted) {
+        setState(() {
+          _isListening = false;
+          if (_phase == AssistantOverlayPhase.listening) {
+            _phase = AssistantOverlayPhase.idle;
+          }
+        });
+      }
       return;
     }
 
@@ -217,11 +235,16 @@ class _OverlayAppState extends State<OverlayApp> {
       return;
     }
 
-    setState(() => _isListening = true);
+    setState(() {
+      _isListening = true;
+      _phase = AssistantOverlayPhase.listening;
+    });
+    _startAudioPoller();
     try {
       await _speech.listen(
         onResult: (SpeechRecognitionResult result) {
           if (result.finalResult) {
+            _stopAudioPoller();
             setState(() {
               _isListening = false;
               _taskController.text = result.recognizedWords;
@@ -236,12 +259,47 @@ class _OverlayAppState extends State<OverlayApp> {
       );
     } catch (error) {
       log('Overlay speech start failed: $error');
+      _stopAudioPoller();
       if (mounted) {
-        setState(() => _isListening = false);
+        setState(() {
+          _isListening = false;
+          if (_phase == AssistantOverlayPhase.listening) {
+            _phase = AssistantOverlayPhase.idle;
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not start voice input.')),
         );
       }
+    }
+  }
+
+  /// Polls the live microphone sound level while listening and feeds it to
+  /// the orb so its jelly deformation reacts to real voice amplitude.
+  void _startAudioPoller() {
+    _audioPoller?.cancel();
+    _audioPoller = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      if (!mounted) return;
+      final level = _soundLevelNormalized();
+      if ((level - _audioLevel).abs() > 0.004) {
+        setState(() => _audioLevel = level);
+      }
+    });
+  }
+
+  void _stopAudioPoller() {
+    _audioPoller?.cancel();
+    _audioPoller = null;
+    _audioLevel = 0;
+  }
+
+  double _soundLevelNormalized() {
+    try {
+      final raw = _speech.getSoundLevel();
+      if (raw.isNaN || raw.isInfinite) return 0;
+      return (raw.clamp(0.0, 10.0) / 10.0).toDouble();
+    } catch (_) {
+      return 0;
     }
   }
 
@@ -466,7 +524,7 @@ class _OverlayAppState extends State<OverlayApp> {
             width: 72,
             height: 72,
             child: Center(
-              child: AssistantOrb(phase: _phase, size: 56),
+              child: AssistantOrb(phase: _phase, size: 56, audioLevel: _audioLevel),
             ),
           ),
         ),
@@ -506,7 +564,7 @@ class _OverlayAppState extends State<OverlayApp> {
                   ),
                   child: Row(
                     children: [
-                      AssistantOrb(phase: _phase, size: 36),
+                      AssistantOrb(phase: _phase, size: 36, audioLevel: _audioLevel),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(

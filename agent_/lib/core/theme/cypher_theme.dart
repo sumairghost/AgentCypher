@@ -120,6 +120,9 @@ class CypherThemeData {
   final AccentFamily accentFamily;
   final CypherThemePreset preset;
 
+  /// User-selected custom accent; overrides the preset family when set.
+  final Color? customAccent;
+
   late final CypherColorTokens colors;
   late final CypherGradientTokens gradients;
   late final CypherTypographyTokens typography;
@@ -130,10 +133,12 @@ class CypherThemeData {
     required this.isDark,
     required this.accentFamily,
     required this.preset,
+    this.customAccent,
   }) {
     colors = CypherColorTokens(
       isDark: isDark,
       accentFamily: accentFamily,
+      customAccent: customAccent,
     );
     gradients = CypherGradientTokens(
       isDark: isDark,
@@ -142,6 +147,7 @@ class CypherThemeData {
         intensity: preset.gradientIntensity,
         blur: preset.gradientBlur,
         accentFamily: accentFamily,
+        customAccent: customAccent,
       ),
     );
     typography = CypherTypographyTokens(

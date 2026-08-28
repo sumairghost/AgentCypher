@@ -25,6 +25,20 @@ class VoiceService {
   /// Whether the TTS engine is ready for use.
   bool get ttsAvailable => _isInitialized;
 
+  /// Live microphone sound level normalized to 0..1 (0 when unavailable or
+  /// not listening). Maps to orb jelly deformation while listening.
+  ///
+  /// Backed by `SpeechToText.getSoundLevel()`; never fabricated.
+  double get soundLevelNormalized {
+    try {
+      final raw = _speech.getSoundLevel();
+      if (raw.isNaN || raw.isInfinite) return 0;
+      return (raw.clamp(0.0, 10.0) / 10.0).toDouble();
+    } catch (_) {
+      return 0;
+    }
+  }
+
   // ─── Wake word ("Hey Cypher") ───────────────────────────────────────────
   //
   // Placeholder API surface only: background wake-word detection is NOT

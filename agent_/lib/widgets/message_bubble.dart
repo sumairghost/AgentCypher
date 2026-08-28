@@ -20,7 +20,15 @@ import '../models/chat_message.dart';
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
 
-  const MessageBubble({super.key, required this.message});
+  /// Compact rendering for constrained surfaces (the overlay chat).
+  /// Scales padding and type down; keeps the same token-driven materials.
+  final bool compact;
+
+  const MessageBubble({
+    super.key,
+    required this.message,
+    this.compact = false,
+  });
 
   ImageProvider? _imageProvider() {
     final value = message.imageUrl;
@@ -69,9 +77,9 @@ class MessageBubble extends StatelessWidget {
   Widget _buildUserBody(BuildContext context, ImageProvider? image) {
     final c = context.cypher;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: CypherSpacing.space5,
-        vertical: CypherSpacing.space4,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? CypherSpacing.space4 : CypherSpacing.space5,
+        vertical: compact ? CypherSpacing.space3 : CypherSpacing.space4,
       ),
       decoration: BoxDecoration(
         color: c.colors.accent.withOpacity(0.16),
@@ -86,7 +94,10 @@ class MessageBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SelectableText(message.content, style: c.typography.chatMessage),
+          SelectableText(
+            message.content,
+            style: compact ? c.typography.bodyMedium : c.typography.chatMessage,
+          ),
           if (image != null) ...[
             const SizedBox(height: CypherSpacing.space3),
             _MessageImage(image: image),
@@ -112,8 +123,9 @@ class MessageBubble extends StatelessWidget {
             selectable: true,
             styleSheet:
                 MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-              p: c.typography.chatMessage,
-              listBullet: c.typography.chatMessage,
+              p: compact ? c.typography.bodyMedium : c.typography.chatMessage,
+              listBullet:
+                  compact ? c.typography.bodyMedium : c.typography.chatMessage,
               h1: c.typography.headlineSmall,
               h2: c.typography.titleLarge,
               h3: c.typography.titleMedium,

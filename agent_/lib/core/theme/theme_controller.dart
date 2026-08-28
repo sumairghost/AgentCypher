@@ -13,6 +13,7 @@ class ThemeController extends ChangeNotifier {
   static const _prefsKeyGradientStyle = 'cypher_gradient_style';
   static const _prefsKeyGradientIntensity = 'cypher_gradient_intensity';
   static const _prefsKeyGradientBlur = 'cypher_gradient_blur';
+  static const _prefsKeyCustomAccent = 'cypher_custom_accent';
 
   late SharedPreferences _prefs;
   bool _initialized = false;
@@ -22,6 +23,7 @@ class ThemeController extends ChangeNotifier {
   GradientStyle _gradientStyle = GradientStyle.ambient;
   GradientIntensity _gradientIntensity = GradientIntensity.subtle;
   double _gradientBlur = 100.0;
+  Color? _customAccent;
 
   /// Current effective theme data, resolving system mode to actual brightness
   CypherThemeData? _cachedTheme;
@@ -43,6 +45,8 @@ class ThemeController extends ChangeNotifier {
     _gradientStyle = _parseGradientStyle(_prefs.getString(_prefsKeyGradientStyle));
     _gradientIntensity = _parseGradientIntensity(_prefs.getString(_prefsKeyGradientIntensity));
     _gradientBlur = _prefs.getDouble(_prefsKeyGradientBlur) ?? 100.0;
+    final custom = _prefs.getInt(_prefsKeyCustomAccent);
+    _customAccent = custom == null ? null : Color(custom);
     _initialized = true;
     _rebuildTheme();
     notifyListeners();
@@ -65,6 +69,13 @@ class ThemeController extends ChangeNotifier {
 
   CypherThemePreset get preset => CypherThemePreset.byId(_presetId);
   AccentFamily get accentFamily => preset.accentFamily;
+
+  /// User-selected custom accent, if any. When non-null it overrides the
+  /// preset family across colors, gradients, components, and the voice orb.
+  Color? get customAccent => _customAccent;
+
+  /// True while a custom accent (rather than a preset family) is active.
+  bool get isCustomAccent => _customAccent != null;
 
   /// Whether the effective theme is dark (resolves system mode)
   bool get isDark {
@@ -98,6 +109,7 @@ class ThemeController extends ChangeNotifier {
       isDark: brightness == Brightness.dark,
       accentFamily: accentFamily,
       preset: _buildEffectivePreset(),
+      customAccent: _customAccent,
     );
     return effective.toMaterialTheme();
   }
@@ -126,14 +138,37 @@ class ThemeController extends ChangeNotifier {
   Future<void> setPreset(String presetId) async {
     final preset = CypherThemePreset.byId(presetId);
     _presetId = preset.id;
+    // Selecting a preset deliberately replaces any custom accent.
+    _customAccent = null;
     // Apply preset's gradient defaults
     _gradientStyle = preset.gradientStyle;
     _gradientIntensity = preset.gradientIntensity;
     _gradientBlur = preset.gradientBlur;
     await _prefs.setString(_prefsKeyPreset, _presetId);
+    await _prefs.remove(_prefsKeyCustomAccent);
     await _prefs.setString(_prefsKeyGradientStyle, _gradientStyleToString(_gradientStyle));
     await _prefs.setString(_prefsKeyGradientIntensity, _gradientIntensityToString(_gradientIntensity));
     await _prefs.setDouble(_prefsKeyGradientBlur, _gradientBlur);
+    _rebuildTheme();
+    notifyListeners();
+  }
+
+  /// Applies a user-selected custom accent. Preserves the current preset's
+  /// gradient style and mode — this never silently switches the preset or
+  /// converts the selection into an unrelated family.
+  Future<void> setCustomAccent(Color color) async {
+    if (_customAccent == color) return;
+    _customAccent = color;
+    await _prefs.setInt(_prefsKeyCustomAccent, color.value);
+    _rebuildTheme();
+    notifyListeners();
+  }
+
+  /// Returns to the preset's own accent family.
+  Future<void> clearCustomAccent() async {
+    if (_customAccent == null) return;
+    _customAccent = null;
+    await _prefs.remove(_prefsKeyCustomAccent);
     _rebuildTheme();
     notifyListeners();
   }
@@ -182,6 +217,7 @@ class ThemeController extends ChangeNotifier {
       isDark: isDark,
       accentFamily: accentFamily,
       preset: _buildEffectivePreset(),
+      customAccent: _customAccent,
     );
   }
 
