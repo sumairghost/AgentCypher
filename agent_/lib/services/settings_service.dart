@@ -253,6 +253,24 @@ class SettingsService {
     return _prefs.getBool('${accessibilitySettings}high_contrast') ?? false;
   }
 
+  // ─── Developer Mode ───────────────────
+  Future<void> setDeveloperModeEnabled(bool enabled) async {
+    await _prefs.setBool('developer_mode_enabled', enabled);
+  }
+  bool isDeveloperModeEnabled() {
+    return _prefs.getBool('developer_mode_enabled') ?? false;
+  }
+  Future<void> recordDeveloperTap() async {
+    int taps = _prefs.getInt('developer_taps') ?? 0;
+    taps++;
+    await _prefs.setInt('developer_taps', taps);
+  }
+  int getDeveloperTapCount() {
+    return _prefs.getInt('developer_taps') ?? 0;
+  }
+  Future<void> resetDeveloperTaps() async {
+    await _prefs.remove('developer_taps');
+  }
   // ─── General Settings ───────────────────
 
   /// Get all settings as a dictionary

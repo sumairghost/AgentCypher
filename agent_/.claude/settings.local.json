@@ -33,7 +33,20 @@
       "PowerShell('--- settings screen: any other symbols from missing imports? scan for TaskDeveloperSnapshot usage of upgrade fields + _flutterVersion etc ---'; Select-String -Path lib\\\\screens\\\\settings_screen.dart -Pattern \"_flutterVersion|_androidVersion|_appVersion|_isOverlayPermissionGranted|_permissions\" | Select-Object -First 6 | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" }; ''; '--- onboarding screen: check for compile risks \\(uses what services?\\) ---'; Select-String -Path lib\\\\screens\\\\onboarding_screen.dart -Pattern \"^import\" | ForEach-Object { $_.Line.Trim\\(\\) })",
       "PowerShell($tools = 'flutter','dart','java'; foreach \\($t in $tools\\) { $c = Get-Command $t -ErrorAction SilentlyContinue; if \\($c\\) { \"$t => $\\($c.Source\\)\" } else { \"$t => NOT FOUND\" } }; if \\(Test-Path \"C:\\\\Program Files\\\\Java\"\\) { Get-ChildItem \"C:\\\\Program Files\\\\Java\" | Select-Object -ExpandProperty Name }; if \\(Test-Path env:ANDROID_HOME\\) { \"ANDROID_HOME=$env:ANDROID_HOME\" } else { \"ANDROID_HOME not set\" })",
       "PowerShell(Get-ChildItem -Force -Path \".\\\\.claude\\\\agents\" | Select-Object Name, Length; Write-Host \"---\"; Get-ChildItem -Force -Path \".\\\\.claude\\\\skills\" | Select-Object Name, Length; Write-Host \"---\"; Get-ChildItem -Force -Path \".\\\\.claude\\\\skills\" -Directory | ForEach-Object { Write-Host \"== $\\($_.Name\\) ==\"; Get-ChildItem -Force -Path $_.FullName | Select-Object Name, Length })",
-      "PowerShell(Get-ChildItem -Force -Path \".\\\\.claude\\\\skills\" -Directory | ForEach-Object { Write-Host \"== $\\($_.Name\\) ==\"; Get-ChildItem -Force -Path $_.FullName | Select-Object Name, Length })"
+      "PowerShell(Get-ChildItem -Force -Path \".\\\\.claude\\\\skills\" -Directory | ForEach-Object { Write-Host \"== $\\($_.Name\\) ==\"; Get-ChildItem -Force -Path $_.FullName | Select-Object Name, Length })",
+      "Bash(awk '{print $1}')",
+      "Bash(python3 -)",
+      "Bash(where flutter *)",
+      "Bash(where java *)",
+      "Bash(where dart *)",
+      "Bash(where adb *)",
+      "Read(//c/Users/Hp/AppData/Local/Android/Sdk/**)",
+      "Bash(unzip -q flutter.zip)",
+      "Bash(winget install *)",
+      "Read(//c//**)",
+      "Read(//c/Program Files/**)",
+      "Bash(echo \"2\\) unzip to C:\\\\\\\\Users\\\\\\\\Hp\\\\\\\\sdks\\\\\\\\flutter\")",
+      "Bash(echo \"3\\) Add C:\\\\\\\\Users\\\\\\\\Hp\\\\\\\\sdks\\\\\\\\flutter\\\\\\\\bin to PATH\")"
     ]
   }
 }

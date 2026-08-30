@@ -6,6 +6,7 @@ import 'dart:ui';
 import '../config/feature_flags.dart';
 import '../services/ai_service.dart';
 import '../services/screen_automation_service.dart';
+import '../core/theme/cypher_theme.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -308,9 +309,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
       if (mounted) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final c = context.cypher.colors;
         showModalBottomSheet(
           context: context,
-          backgroundColor: isDark ? const Color(0xFF161329) : Colors.white,
+          backgroundColor: isDark ? c.surfaceElevated : Colors.white,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
@@ -402,11 +404,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = context.cypher.colors;
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0B0F19)
-          : const Color(0xFFF8FAFC),
+          ? c.background
+          : Colors.white,
       body: Stack(
         children: [
           // Background fluid glow effect
@@ -472,12 +475,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    isDark
-                        ? const Color(0xFF6366F1).withOpacity(0.18)
-                        : const Color(0xFF4F46E5).withOpacity(0.08),
-                    isDark
-                        ? const Color(0xFF6366F1).withOpacity(0)
-                        : const Color(0xFF4F46E5).withOpacity(0),
+                    c.accentLight.withOpacity(isDark ? 0.18 : 0.08),
+                    c.accentLight.withOpacity(0),
                   ],
                 ),
               ),
@@ -493,12 +492,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    isDark
-                        ? const Color(0xFF38BDF8).withOpacity(0.15)
-                        : const Color(0xFF0EA5E9).withOpacity(0.06),
-                    isDark
-                        ? const Color(0xFF38BDF8).withOpacity(0)
-                        : const Color(0xFF0EA5E9).withOpacity(0),
+                    c.accent.withOpacity(isDark ? 0.15 : 0.06),
+                    c.accent.withOpacity(0),
                   ],
                 ),
               ),
@@ -532,8 +527,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     : isCompleted
                     ? Theme.of(context).primaryColor.withOpacity(0.5)
                     : (isDark
-                          ? const Color(0xFF1E293B)
-                          : const Color(0xFFE2E8F0)),
+                          ? c.surfaceContainerHigh
+                          : c.surfaceElevated),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
@@ -575,8 +570,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         color: isActive
             ? Theme.of(context).primaryColor
             : isCompleted
-            ? (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569))
-            : (isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8)),
+            ? (isDark ? c.textSecondary : c.textTertiary)
+            : (isDark ? c.textTertiary : c.textSecondary),
       ),
     );
   }
@@ -607,7 +602,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark ? const Color(0xFF151D30) : Colors.white,
+                  color: isDark ? c.backgroundSecondary : c.surfaceContainerHigh,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
@@ -639,7 +634,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             style: TextStyle(
               fontSize: 38,
               fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              color: isDark ? Colors.white : c.background,
               letterSpacing: -0.5,
             ),
           ),
@@ -649,7 +644,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+              color: isDark ? c.textSecondary : c.textTertiary,
               height: 1.55,
             ),
           ),
@@ -770,8 +765,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF475569),
+                        ? c.textSecondary
+                        : c.textTertiary,
                   ),
                 ),
               ],
@@ -803,7 +798,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             'Permissions are needed to interact with other apps.',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+              color: isDark ? c.textSecondary : c.textTertiary,
             ),
           ),
           const SizedBox(height: 16),
@@ -895,7 +890,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 style: TextButton.styleFrom(
                   foregroundColor: isDark
                       ? Colors.white
-                      : const Color(0xFF475569),
+                      : c.textTertiary,
                 ),
                 child: const Text(
                   'Back',
@@ -910,8 +905,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   color: _canProceedToModel
                       ? Theme.of(context).colorScheme.primary
                       : (isDark
-                            ? const Color(0xFF1E293B)
-                            : const Color(0xFFE2E8F0)),
+                            ? c.backgroundSecondary
+                            : c.surfaceContainerHigh),
                   boxShadow: _canProceedToModel
                       ? [
                           BoxShadow(
@@ -938,8 +933,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     foregroundColor: Colors.white,
                     shadowColor: Colors.transparent,
                     disabledForegroundColor: isDark
-                        ? const Color(0xFF475569)
-                        : const Color(0xFF94A3B8),
+                        ? c.textTertiary
+                        : c.textSecondary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -973,7 +968,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w800,
-          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+          color: isDark ? c.textSecondary : c.textTertiary,
           letterSpacing: 1.5,
         ),
       ),
@@ -1074,8 +1069,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   fontSize: 12.5,
                   height: 1.45,
                   color: isDark
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF475569),
+                      ? c.textSecondary
+                      : c.textTertiary,
                 ),
               ),
             ],
@@ -1106,7 +1101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             'Select a provider to prefill API details automatically.',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+              color: isDark ? c.textSecondary : c.textTertiary,
             ),
           ),
           const SizedBox(height: 20),
@@ -1258,7 +1253,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 style: TextButton.styleFrom(
                   foregroundColor: isDark
                       ? Colors.white
-                      : const Color(0xFF475569),
+                      : c.textTertiary,
                 ),
                 child: const Text(
                   'Back',
@@ -1272,8 +1267,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   borderRadius: BorderRadius.circular(16),
                   color: _isValidating
                       ? (isDark
-                            ? const Color(0xFF1E293B)
-                            : const Color(0xFFE2E8F0))
+                            ? c.backgroundSecondary
+                            : c.surfaceContainerHigh)
                       : Theme.of(context).colorScheme.primary,
                   boxShadow: _isValidating
                       ? null
@@ -1434,7 +1429,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           labelText: label,
           labelStyle: TextStyle(
             fontSize: 13,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+            color: isDark ? c.textSecondary : c.textTertiary,
           ),
           hintText: hint,
           hintStyle: TextStyle(

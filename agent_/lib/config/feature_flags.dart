@@ -10,4 +10,9 @@ class FeatureFlags {
   /// draft-to-final-confirm sequence works end-to-end with honest
   /// unverified reporting. See expansion plan.
   static const bool mediaPostWorkflowEnabled = false;
+
+  /// Development build environment capability.
+  /// This must ONLY return true for actual debug/development builds.
+  /// It is never fabricated for production builds.
+  static bool get isDevelopmentBuild => false; // Set to true only in dev builds
 }
