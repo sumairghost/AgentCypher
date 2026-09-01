@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -29,8 +30,30 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 import '../config/feature_flags.dart';
+import '../services/developer_config_service.dart';
 import '../widgets/unified_task_workspace.dart';
+import 'developer/developer_console_home.dart';
 import 'settings/appearance_settings.dart';
+
+/// Android-style in-app developer-mode activation: Settings → About →
+/// Build number → 7 rapid taps → "Developer mode enabled". The timing rules
+/// (debounce, inactivity reset) live in [DeveloperTapActivator].
+class _BuildNumberTapController {
+  final DeveloperTapActivator _activator = DeveloperTapActivator();
+
+  /// Returns the feedback message to surface for this tap, or null when the
+  /// tap was silently consumed (below the feedback threshold).
+  String? handleTap(DateTime now) {
+    final progress = _activator.registerTap(now);
+    if (progress.activated) {
+      _activator.reset();
+      return 'Developer mode enabled';
+    }
+    if (progress.rejected) return null;
+    if (progress.count < 3) return null;
+    return 'You are now ${progress.remaining} steps away from being a developer';
+  }
+}
 
 class SettingsScreen extends StatefulWidget {
   final AiService aiService;
@@ -75,6 +98,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _memoryLoading = true;
   final SettingsService _settingsService = SettingsService();
   bool _developerModeEnabled = false;
+
+  /// Android-style seven-tap activation (About → Build number).
+  final _BuildNumberTapController _buildNumberTaps = _BuildNumberTapController();
+  String _buildNumber = 'Unavailable';
   bool _developerLoading = true;
   bool _developerRefreshing = false;
   String _flutterVersion = 'Unavailable';
@@ -209,6 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         _flutterVersion = 'Flutter ${Platform.version.split(' ').first}';
         _androidVersion = Platform.operatingSystemVersion;
         _appVersion = '${info.version}+${info.buildNumber}';
+        _buildNumber = info.buildNumber.isEmpty ? 'Unavailable' : info.buildNumber;
         _developerLoading = false;
       });
       if (_developerModeEnabled) {
@@ -223,12 +251,52 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _setDeveloperModeEnabled(bool enabled) async {
     await _settingsService.setDeveloperModeEnabled(enabled);
+    await developerConfig.setDeveloperModeEnabled(enabled);
     if (!mounted) return;
     setState(() => _developerModeEnabled = enabled);
     if (enabled) {
       await _loadUpgradeHistory();
       await _refreshDeveloperDiagnostics();
     }
+  }
+
+  /// Android-style build-number activation (About → Build number, 7 taps).
+  ///
+  /// This is Cypher's own in-app developer mode; it never touches Android
+  /// system Developer Options. Feedback is both visual (snackbar) and
+  /// announced to screen readers.
+  Future<void> _handleBuildNumberTap() async {
+    HapticFeedback.selectionClick();
+    if (!mounted) return;
+    if (_developerModeEnabled) {
+      const msg = 'Developer mode is already enabled';
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(msg)),
+      );
+      return;
+    }
+    final message = _buildNumberTaps.handleTap(DateTime.now());
+    if (message == null) return;
+    if (message == 'Developer mode enabled') {
+      await _setDeveloperModeEnabled(true);
+      if (!mounted) return;
+      SemanticsService.announce(message, TextDirection.ltr);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    SemanticsService.announce(message, TextDirection.ltr);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _loadUpgradeHistory() async {
@@ -1757,6 +1825,21 @@ class _SettingsScreenState extends State<SettingsScreen>
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                title: const Text('Build number'),
+                subtitle: Text(
+                  _developerModeEnabled
+                      ? '$_buildNumber · Developer mode is on'
+                      : _buildNumber,
+                ),
+                leading: const Icon(Icons.build_circle_outlined),
+                // Android-style activation: seven rapid taps reveal Cypher's
+                // own developer mode (debounce + timeout handled in
+                // _BuildNumberTapController). Normal scrolling never fires
+                // onTap, and sparse taps reset.
+                onTap: _handleBuildNumberTap,
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Project Repository'),
                 subtitle: const Text('View source code on GitHub'),
                 leading: const Icon(Icons.code_rounded),
@@ -2231,6 +2314,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                   onPressed: _exportDeveloperDiagnostics,
                   icon: const Icon(Icons.ios_share_rounded),
                   label: const Text('Export report'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DeveloperConsoleHome(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.terminal_rounded),
+                  label: const Text('Developer Console'),
                 ),
               ],
             ),

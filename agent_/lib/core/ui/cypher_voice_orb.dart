@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../theme/cypher_theme.dart';
+import 'orb_config.dart';
 
 /// A premium, procedurally rendered voice-assistant orb.
 ///
@@ -27,6 +28,17 @@ class CypherVoiceOrb extends StatefulWidget {
   final VoidCallback? onTap;
   final String? semanticLabel;
 
+  /// Optional developer tuning (Orb Lab). `null` renders the stock profile.
+  final CypherOrbConfig? config;
+
+  /// Optional programmatic control surface so tooling can drive the SAME
+  /// renderer a user touches by hand.
+  final CypherOrbController? controller;
+
+  /// When true the ticker stops and the orb holds its last frame (Orb Lab
+  /// play/pause). Motion resumes from the accumulated time.
+  final bool paused;
+
   const CypherVoiceOrb({
     super.key,
     this.state = CypherVoiceOrbState.idle,
@@ -35,6 +47,9 @@ class CypherVoiceOrb extends StatefulWidget {
     this.size = 120,
     this.onTap,
     this.semanticLabel,
+    this.config,
+    this.controller,
+    this.paused = false,
   });
 
   @override
@@ -116,6 +131,41 @@ class _StateProfile {
           energy: 0.14, deformAmp: 0.035, deformSpeed: 0.9, flowSpeed: 0.7);
     }
   }
+
+  /// Returns this profile with developer overrides applied (Orb Lab).
+  /// `null` config returns the stock profile untouched.
+  _StateProfile appliedWith(CypherOrbConfig? cfg, CypherVoiceOrbState state) {
+    if (cfg == null) return this;
+    double? energyOverride;
+    switch (state) {
+      case CypherVoiceOrbState.idle:
+        energyOverride = cfg.idleEnergy;
+        break;
+      case CypherVoiceOrbState.listening:
+        energyOverride = cfg.listeningEnergy;
+        break;
+      case CypherVoiceOrbState.processing:
+        energyOverride = cfg.processingEnergy;
+        break;
+      case CypherVoiceOrbState.executing:
+        energyOverride = cfg.executingEnergy;
+        break;
+      case CypherVoiceOrbState.speaking:
+        energyOverride = cfg.speakingEnergy;
+        break;
+      default:
+        energyOverride = null;
+    }
+    return _StateProfile(
+      energy: energyOverride ?? energy,
+      deformAmp: (deformAmp * cfg.deformation).clamp(0.0, 0.30).toDouble(),
+      deformSpeed: (deformSpeed * cfg.deformationSpeed).clamp(0.0, 8.0).toDouble(),
+      flowSpeed: (flowSpeed * cfg.fluidSpeed).clamp(0.0, 8.0).toDouble(),
+      audioGain: (audioGain * cfg.audioInfluence).clamp(0.0, 2.0).toDouble(),
+      useErrorTint: useErrorTint,
+      useDimTint: useDimTint,
+    );
+  }
 }
 
 /// Touch-interaction physics: displacement, velocity, damping, elasticity,
@@ -129,16 +179,38 @@ class _OrbInteraction {
   bool _hasTouch = false;
   double _touchAngle = 0;
 
+  // Developer tuning scales (Orb Lab); 1.0 = stock physics.
+  double stiffnessScale = 1;
+  double dampingScale = 1;
+  double touchScale = 1;
+
   static const double _stiffness = 90;
   static const double _damping = 9;
   static const double _maxDisp = 0.20;
 
+  double get _stiffnessScaled => _stiffness * stiffnessScale;
+  double get _dampingScaled => _damping * dampingScale;
+
   void begin(Offset center, Offset local) {
     _hasTouch = true;
     active = true;
-    pressure = 0.35;
+    pressure = (0.35 * touchScale).clamp(0.0, 1.0).toDouble();
     _touchAngle = math.atan2(local.dy - center.dy, local.dx - center.dx);
   }
+
+  /// Simulated touch (Orb Lab): position relative to center in half-size
+  /// units so callers never need pixel math.
+  void beginAt(Offset center, double size, double fx, double fy) =>
+      begin(
+        center,
+        Offset(center.dx + fx * size / 2, center.dy + fy * size / 2),
+      );
+
+  void moveAt(Offset center, double size, double fx, double fy) =>
+      update(
+        center,
+        Offset(center.dx + fx * size / 2, center.dy + fy * size / 2),
+      );
 
   void update(Offset center, Offset local) {
     if (!_hasTouch) return;
@@ -158,15 +230,16 @@ class _OrbInteraction {
         .toDouble() *
         _maxDisp *
         pull;
-    vx += (_stiffness * (tx - x) - _damping * vx) * 0.016;
-    vy += (_stiffness * (ty - y) - _damping * vy) * 0.016;
-    x += vx * 0.016;
-    y += vy * 0.016;
+    final dt = 0.016;
+    vx += (_stiffnessScaled * (tx - x) - _dampingScaled * vx) * dt;
+    vy += (_stiffnessScaled * (ty - y) - _dampingScaled * vy) * dt;
+    x += vx * dt;
+    y += vy * dt;
     _touchAngle = math.atan2(local.dy - center.dy, local.dx - center.dx);
   }
 
   void press() {
-    pressure = (pressure + 0.25).clamp(0.0, 1.0).toDouble();
+    pressure = (pressure + 0.25 * touchScale).clamp(0.0, 1.0).toDouble();
   }
 
   void swipe(Offset delta) {
@@ -184,10 +257,11 @@ class _OrbInteraction {
   /// Called every frame even without a touch: lets the mat settle back.
   void relax() {
     if (_hasTouch) return;
-    vx += (_stiffness * (0 - x) - _damping * vx) * 0.016;
-    vy += (_stiffness * (0 - y) - _damping * vy) * 0.016;
-    x += vx * 0.016;
-    y += vy * 0.016;
+    final dt = 0.016;
+    vx += (_stiffnessScaled * (0 - x) - _dampingScaled * vx) * dt;
+    vy += (_stiffnessScaled * (0 - y) - _dampingScaled * vy) * dt;
+    x += vx * dt;
+    y += vy * dt;
     squash += (0 - squash) * 0.06;
     pressure += (0 - pressure) * 0.08;
   }
@@ -202,7 +276,8 @@ class _OrbInteraction {
 }
 
 class _CypherVoiceOrbState extends State<CypherVoiceOrb>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin
+    implements CypherOrbDelegate {
   Ticker? _ticker;
   Duration _last = Duration.zero;
   double _t = 0; // running time in seconds (continuous, non-looping phases)
@@ -222,11 +297,48 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
   void initState() {
     super.initState();
     _reduced = MediaQuery.disableAnimationsOf(context);
-    _ticker = createTicker(_onTick)..start();
+    _attachController();
+    if (!widget.paused) {
+      _ticker = createTicker(_onTick)..start();
+    }
+  }
+
+  @override
+  void didUpdateWidget(CypherVoiceOrb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?._delegate = null;
+      _attachController();
+    }
+    if (oldWidget.config != widget.config) {
+      _applyConfigScales();
+    }
+    if (oldWidget.paused != widget.paused) {
+      if (widget.paused) {
+        _ticker?.stop();
+      } else {
+        _last = Duration.zero;
+        _ticker ??= createTicker(_onTick);
+        _ticker!.start();
+      }
+    }
+  }
+
+  void _attachController() {
+    widget.controller?._delegate = this;
+    _applyConfigScales();
+  }
+
+  void _applyConfigScales() {
+    final cfg = widget.config;
+    _interaction.stiffnessScale = (cfg?.elasticity ?? 1).clamp(0.2, 2.5).toDouble();
+    _interaction.dampingScale = (cfg?.damping ?? 1).clamp(0.2, 3).toDouble();
+    _interaction.touchScale = (cfg?.touchInfluence ?? 1).clamp(0, 2).toDouble();
   }
 
   @override
   void dispose() {
+    widget.controller?._delegate = null;
     _ticker?.dispose();
     super.dispose();
   }
@@ -235,12 +347,52 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
     final dt = (elapsed - _last).inMicroseconds / 1e6;
     _last = elapsed;
     if (dt <= 0 || dt > 0.1) return; // guard against pauses/jumps
-    _t += dt;
+    final motionScale =
+        (widget.config?.motionScale ?? 1).clamp(0.0, 2.0).toDouble();
+    _t += dt * motionScale;
     _interaction.relax();
     _tapPulse = (_tapPulse - dt * 3).clamp(0.0, 1.0).toDouble();
     final target = _targetScale();
     _scale += (target - _scale) * math.min(1.0, dt * 4.0);
     if (mounted) setState(() {});
+  }
+
+  // ─── CypherOrbDelegate (Orb Lab control surface) ──────────────────────────
+
+  @override
+  void pulse() {
+    _tapPulse = 1.0;
+  }
+
+  @override
+  void swipe(double dx, double dy) {
+    _interaction.swipe(Offset(dx, dy));
+  }
+
+  @override
+  void press() {
+    _interaction.press();
+  }
+
+  @override
+  void beginTouch(double x, double y) {
+    _interaction.beginAt(_center(), widget.size, x, y);
+  }
+
+  @override
+  void moveTouch(double x, double y) {
+    _interaction.moveAt(_center(), widget.size, x, y);
+  }
+
+  @override
+  void endTouch() {
+    _interaction.release();
+  }
+
+  @override
+  void resetInteraction() {
+    _interaction.reset();
+    _tapPulse = 0;
   }
 
   double _targetScale() {
@@ -280,9 +432,10 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
   @override
   Widget build(BuildContext context) {
     final size = widget.size;
-    final profile = _StateProfile.of(
-      widget.enabled ? widget.state : CypherVoiceOrbState.unavailable,
-    );
+    final effectiveState =
+        widget.enabled ? widget.state : CypherVoiceOrbState.unavailable;
+    final profile = _StateProfile.of(effectiveState)
+        .appliedWith(widget.config, effectiveState);
     final palette = _resolvePalette(context, profile);
 
     return Semantics(
@@ -318,6 +471,7 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
               phaseB: _phaseB,
               phaseC: _phaseC,
               phaseD: _phaseD,
+              config: widget.config,
             ),
           ),
         ),
@@ -387,6 +541,7 @@ class _OrbPainter extends CustomPainter {
   final _OrbInteraction interaction;
   final bool reduced;
   final double phaseA, phaseB, phaseC, phaseD;
+  final CypherOrbConfig? config;
 
   _OrbPainter({
     required this.t,
@@ -401,6 +556,7 @@ class _OrbPainter extends CustomPainter {
     required this.phaseB,
     required this.phaseC,
     required this.phaseD,
+    this.config,
   });
 
   static const int _segments = 60;
@@ -417,13 +573,18 @@ class _OrbPainter extends CustomPainter {
         .clamp(0.02, 1.0)
         .toDouble();
     final amp = profile.deformAmp * motionFactor * math.min(1.0, energy * 1.4);
+    final cfg = config;
+    final waveStrength = cfg?.waveStrength ?? 1.0;
+    // Softness dampens the high-order harmonics for a smoother silhouette.
+    final softness = 1.0 - (cfg?.jellySoftness ?? 0.0) * 0.8;
 
     // ── Ambient glow (cheap radial fill, no blur filter) ────────────────
+    final glowScale = cfg?.glow ?? 1.0;
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          palette.glow.withOpacity(0.10 + 0.10 * energy),
-          palette.glow.withOpacity(0.03 * energy),
+          palette.glow.withOpacity((0.10 + 0.10 * energy) * glowScale),
+          palette.glow.withOpacity(0.03 * energy * glowScale),
           Colors.transparent,
         ],
         stops: const [0.0, 0.55, 1.0],
@@ -445,10 +606,17 @@ class _OrbPainter extends CustomPainter {
       final theta = i / _segments * math.pi * 2;
       final d1 =
           0.75 * math.sin(theta + t * profile.deformSpeed * 2.3 + phaseA);
-      final d2 = 0.5 * math.sin(2 * theta - t * profile.flowSpeed * 1.7 + phaseB);
-      final d3 =
-          0.35 * math.sin(3 * theta + t * profile.deformSpeed * 4.1 + phaseC);
-      final d4 = 0.22 * math.sin(4 * theta - t * profile.flowSpeed * 3.1 + phaseD);
+      final d2 = waveStrength *
+          0.5 *
+          math.sin(2 * theta - t * profile.flowSpeed * 1.7 + phaseB);
+      final d3 = waveStrength *
+          softness *
+          0.35 *
+          math.sin(3 * theta + t * profile.deformSpeed * 4.1 + phaseC);
+      final d4 = waveStrength *
+          softness *
+          0.22 *
+          math.sin(4 * theta - t * profile.flowSpeed * 3.1 + phaseD);
 
       // Audio reacts like jelly: amplitude pushes low-order harmonics.
       final audioTerm = audio *
@@ -457,7 +625,8 @@ class _OrbPainter extends CustomPainter {
               math.sin(theta * 2 + t * 5.0) * 0.4);
 
       // A tap sends a fast traveling wave around the rim, then settles.
-      final pulseTerm = tapPulse * 0.16 * math.sin(2 * theta + t * 18.0);
+      final pulseTerm =
+          tapPulse * 0.16 * (cfg?.tapResponse ?? 1.0) * math.sin(2 * theta + t * 18.0);
 
       // Finger indentation near the touch angle.
       final indent =
@@ -518,10 +687,15 @@ class _OrbPainter extends CustomPainter {
     canvas.drawCircle(Offset(flowX, flowY), R * 1.6, body);
 
     // Overlapping soft light regions orbiting inside the jelly (color flow).
+    // Developer knobs: `highlight` scales opacity; `internalColorMix` blends
+    // the primary highlight between the palette's tint and light shades.
+    final highlightScale = config?.highlight ?? 1.0;
+    final mix = (config?.internalColorMix ?? 1.0).clamp(0.0, 1.0).toDouble();
+    final h1Color = Color.lerp(palette.tint, palette.light, mix)!;
     final highlight1 = Paint()
       ..shader = RadialGradient(
         colors: [
-          palette.light.withOpacity(0.55 * energy + 0.1),
+          h1Color.withOpacity(0.55 * energy * highlightScale + 0.1),
           Colors.transparent,
         ],
       ).createShader(Offset.zero & Size(R * 1.4, R * 1.4));
@@ -532,7 +706,7 @@ class _OrbPainter extends CustomPainter {
     final highlight2 = Paint()
       ..shader = RadialGradient(
         colors: [
-          palette.tint.withOpacity(0.5),
+          palette.tint.withOpacity(0.5 * highlightScale),
           palette.base.withOpacity(0.12),
           Colors.transparent,
         ],

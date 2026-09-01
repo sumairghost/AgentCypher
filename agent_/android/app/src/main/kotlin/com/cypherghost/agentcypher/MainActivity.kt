@@ -6,7 +6,6 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.EventChannel
-import androidx.core.content.ContextCompat
 import android.graphics.PixelFormat
 import android.graphics.Color
 import android.view.Gravity
@@ -20,12 +19,10 @@ import java.util.UUID
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.cypherghost.agentcypher/accessibility"
     private val EVENT_CHANNEL = "com.cypherghost.agentcypher/accessibility_events"
-    private val WAKE_EVENT_CHANNEL = "com.cypherghost.agentcypher/wake_word_events"
     private val FILES_CHANNEL = "com.cypherghost.agentcypher/files"
     private val PICK_DOCUMENTS_REQUEST = 7001
     private var pendingFileResult: MethodChannel.Result? = null
     private var eventSink: EventChannel.EventSink? = null
-    private var wakeEventSink: EventChannel.EventSink? = null
     private var overlayView: View? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -49,7 +46,6 @@ class MainActivity : FlutterActivity() {
             }
         )
 
-        registerWakeWordChannel(flutterEngine)
         registerAccessibilityChannel(flutterEngine, this)
         registerFilesChannel(flutterEngine)
     }
@@ -139,23 +135,12 @@ class MainActivity : FlutterActivity() {
         )
     }
 
-    private fun registerWakeWordChannel(flutterEngine: FlutterEngine) {
-        EventChannel(flutterEngine.dartExecutor.binaryMessenger, WAKE_EVENT_CHANNEL).setStreamHandler(
-            object : EventChannel.StreamHandler {
-                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                    wakeEventSink = events
-                    BackgroundWakeWordService.eventListener = { eventMap ->
-                        runOnUiThread { wakeEventSink?.success(eventMap) }
-                    }
-                }
-
-                override fun onCancel(arguments: Any?) {
-                    wakeEventSink = null
-                    BackgroundWakeWordService.eventListener = null
-                }
-            },
-        )
-    }
+    // Wake-word channel removed: background wake-word detection is NOT
+    // implemented in this build (no BackgroundWakeWordService class exists).
+    // The Dart side (VoiceService) reports the feature as honestly unavailable
+    // and never invokes these methods. A real implementation must add the
+    // native foreground service, its manifest declaration, and this channel
+    // together — never a detector stub.
 
     companion object {
         fun registerAccessibilityChannel(flutterEngine: FlutterEngine, context: android.content.Context) {
@@ -165,48 +150,10 @@ class MainActivity : FlutterActivity() {
                     when (call.method) {
                         "ping" -> result.success(true)
 
-                        "getWakeWordStatus" -> {
-                            result.success(BackgroundWakeWordService.status(context))
-                        }
-
-                        "startWakeWordDetection" -> {
-                            try {
-                                val intent = Intent(context, BackgroundWakeWordService::class.java).apply {
-                                    action = BackgroundWakeWordService.ACTION_START
-                                }
-                                ContextCompat.startForegroundService(context, intent)
-                                result.success(true)
-                            } catch (error: Throwable) {
-                                result.error(
-                                    "WAKE_WORD_START_FAILED",
-                                    error.message ?: "Could not start wake-word service",
-                                    null,
-                                )
-                            }
-                        }
-
-                        "stopWakeWordDetection" -> {
-                            context.stopService(Intent(context, BackgroundWakeWordService::class.java))
-                            result.success(true)
-                        }
-
-                        "pauseWakeWordDetection" -> {
-                            context.startService(
-                                Intent(context, BackgroundWakeWordService::class.java).apply {
-                                    action = BackgroundWakeWordService.ACTION_PAUSE
-                                },
-                            )
-                            result.success(true)
-                        }
-
-                        "resumeWakeWordDetection" -> {
-                            context.startService(
-                                Intent(context, BackgroundWakeWordService::class.java).apply {
-                                    action = BackgroundWakeWordService.ACTION_RESUME
-                                },
-                            )
-                            result.success(true)
-                        }
+                        // Wake-word methods intentionally absent: the feature is
+                        // unavailable in this build (see note above). Dart never
+                        // invokes them; reporting notImplemented keeps the
+                        // channel honest if a stale caller ever appears.
 
                         "logToNative" -> {
                             val msg = call.argument<String>("message") ?: ""

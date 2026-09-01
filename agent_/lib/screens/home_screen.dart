@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
@@ -18,6 +18,7 @@ import '../services/chat_history_service.dart';
 import '../services/notification_service.dart';
 import 'settings_screen.dart';
 import 'task_history_screen.dart';
+import 'settings/settings_main.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import '../main.dart';
 import '../config/feature_flags.dart';
@@ -232,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             if (mounted) {
               setState(() {
                 _messages.add(
-                  ChatMessage(role: 'assistant', content: '⏳ $msg'),
+                  ChatMessage(role: 'assistant', content: 'â³ $msg'),
                 );
               });
               _scrollToBottom();
@@ -249,8 +250,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ? action.response
                         : (result.details ?? 'Done.'))
                   : (action.response.isNotEmpty
-                        ? '${action.response}\n\n⚠️ ${result.details}'
-                        : '⚠️ ${result.details}'),
+                        ? '${action.response}\n\nâš ï¸ ${result.details}'
+                        : 'âš ï¸ ${result.details}'),
               actionResult: result,
             ),
           );
@@ -365,14 +366,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             itemCount: plan.steps.length,
             itemBuilder: (context, index) {
               final step = plan.steps[index];
-              final flag = step.requiresConfirmation ? ' ⚠️' : '';
+              final flag = step.requiresConfirmation ? ' âš ï¸' : '';
               return ListTile(
                 dense: true,
                 leading: Text('${index + 1}.'),
                 title: Text('${step.intent}$flag'),
                 subtitle: Text(
                   '${step.action}'
-                  '${step.expectedResult.isEmpty ? '' : ' → ${step.expectedResult}'}',
+                  '${step.expectedResult.isEmpty ? '' : ' â†’ ${step.expectedResult}'}',
                 ),
               );
             },
@@ -444,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (mounted) {
             setState(() {
               _messages.add(
-                ChatMessage(role: 'assistant', content: '⏳ $message'),
+                ChatMessage(role: 'assistant', content: 'â³ $message'),
               );
             });
             _scrollToBottom();
@@ -486,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             role: 'assistant',
             content: result.success
                 ? (result.details ?? 'Task completed.')
-                : '⚠️ ${result.details ?? 'Task failed.'}',
+                : 'âš ï¸ ${result.details ?? 'Task failed.'}',
             actionResult: result,
           ),
         );
@@ -504,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _messages.add(
           ChatMessage(
             role: 'assistant',
-            content: '⚠️ Task failed: ${error.toString().replaceFirst('Exception: ', '')}',
+            content: 'âš ï¸ Task failed: ${error.toString().replaceFirst('Exception: ', '')}',
           ),
         );
       });
@@ -919,7 +920,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                       const SizedBox(width: CypherSpacing.space3),
                       Text(
-                        'Thinking…',
+                        'Thinkingâ€¦',
                         style: context.cypher.typography.chatMeta,
                       ),
                       const SizedBox(width: CypherSpacing.space2),
@@ -976,10 +977,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SettingsScreen(
+        builder: (_) => SettingsMainPage(
           aiService: _aiService,
           shizukuService: _actionHandler.shizuku,
           screenAutomationService: _actionHandler.screenAutomation,
+          voiceService: _voiceService,
         ),
       ),
     );
@@ -1229,11 +1231,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => SettingsScreen(
-                    aiService: _aiService,
-                    shizukuService: _actionHandler.shizuku,
-                    screenAutomationService: _actionHandler.screenAutomation,
-                  ),
+                  builder: (_) => SettingsMainPage(
+          aiService: _aiService,
+          shizukuService: _actionHandler.shizuku,
+          screenAutomationService: _actionHandler.screenAutomation,
+          voiceService: _voiceService,
+        ),
                 ),
               );
             },
