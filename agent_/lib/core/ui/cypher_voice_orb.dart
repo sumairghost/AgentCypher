@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -307,7 +307,7 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
   void didUpdateWidget(CypherVoiceOrb oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
-      oldWidget.controller?._delegate = null;
+      oldWidget.controller?.delegate = null;
       _attachController();
     }
     if (oldWidget.config != widget.config) {
@@ -325,7 +325,7 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
   }
 
   void _attachController() {
-    widget.controller?._delegate = this;
+    widget.controller?.delegate = this;
     _applyConfigScales();
   }
 
@@ -338,7 +338,7 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
 
   @override
   void dispose() {
-    widget.controller?._delegate = null;
+    widget.controller?.delegate = null;
     _ticker?.dispose();
     super.dispose();
   }

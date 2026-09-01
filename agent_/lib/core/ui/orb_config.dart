@@ -302,33 +302,38 @@ class CypherOrbProfile {
 /// When no orb is attached the calls are safely ignored (never crash, never
 /// fake feedback).
 class CypherOrbController {
-  CypherOrbDelegate? _delegate;
+/// The currently bound orb state — wiring-internal: set by the orb widget
+  /// when it mounts/dismounts so tooling can drive the same renderer it uses by
+   /// hand; kept public (not underscore-private) because the orb widget lives
+     /// in a different library. Callers should prefer the methods below and always
+       /// guard with [isAttached]; calls are safety no-ops when no orb is bound.
+  CypherOrbDelegate? delegate;
 
   /// True when a live orb is bound to this controller.
-  bool get isAttached => _delegate != null;
+  bool get isAttached => delegate != null;
 
   /// Trigger the tap rim-wave without invoking the orb's onTap callback.
-  void pulse() => _delegate?.pulse();
+  void pulse() => delegate?.pulse();
 
   /// Apply a swipe impulse (dx/dy in logical pixels, like a drag delta).
-  void swipe(double dx, double dy) => _delegate?.swipe(dx, dy);
+  void swipe(double dx, double dy) => delegate?.swipe(dx, dy);
 
   /// Increase press depth (as if the user pressed and held).
-  void press() => _delegate?.press();
+  void press() => delegate?.press();
 
   /// Begin a simulated touch at a position relative to the orb center,
   /// expressed in half-size units (0,0 = center; 1,0 = right edge; -1,-1 =
   /// top-left corner).
-  void beginTouch(double x, double y) => _delegate?.beginTouch(x, y);
+  void beginTouch(double x, double y) => delegate?.beginTouch(x, y);
 
   /// Move an active simulated touch.
-  void moveTouch(double x, double y) => _delegate?.moveTouch(x, y);
+  void moveTouch(double x, double y) => delegate?.moveTouch(x, y);
 
   /// Release the simulated touch.
-  void endTouch() => _delegate?.endTouch();
+  void endTouch() => delegate?.endTouch();
 
   /// Reset all interaction physics (settles to rest immediately).
-  void reset() => _delegate?.resetInteraction();
+  void reset() => delegate?.resetInteraction();
 }
 
 /// Implemented by the orb's widget state; hidden from callers.

@@ -59,7 +59,7 @@ Info and Accessibility Settings during initial setup.
 
 ## Features
 
-- **Voice Control:** Wake word detection and continuous voice command capability
+- **Voice Control:** Native speech-to-text listening and spoken replies. (Wake word is not implemented in this build; voice is activated from the UI/orb, honestly reported as UNAVAILABLE where relevant.)
 - **Multi-Provider AI:** Switch between NVIDIA, Gemini, OpenAI, Anthropic, and other providers
 - **Device Automation:** Intelligent task execution with accessibility integration
 - **Memory System:** Persistent memory for preferences and recurring information
