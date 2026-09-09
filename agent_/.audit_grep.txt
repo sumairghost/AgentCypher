@@ -1,0 +1,10 @@
+lib\services\agent_setup.dart:42: late BiometricService _biometric;
+lib\services\agent_setup.dart:58: BiometricService get biometric => _biometric;
+lib\services\agent_setup.dart:136: _biometric = BiometricService();
+lib\services\agent_setup.dart:138: developer.log('? BiometricService initialized', name: 'AgentSetup');
+lib\services\biometric_service.dart:8: class BiometricService {
+lib\services\biometric_service.dart:9: static final BiometricService _instance = BiometricService._internal();
+lib\services\biometric_service.dart:11: factory BiometricService() {
+lib\services\biometric_service.dart:15: BiometricService._internal();
+lib\services\biometric_service.dart:110: Future<AuthenticationResult> authenticateWithFallback({
+--- DONE ---

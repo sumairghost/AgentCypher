@@ -11,6 +11,7 @@ import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'overlay_main.dart';
 import 'services/agent_setup.dart';
+import 'widgets/app_lock_gate.dart';
 
 @pragma("vm:entry-point")
 void overlayMain() {
@@ -150,7 +151,7 @@ class AgentCypherApp extends StatelessWidget {
             );
           },
           home: onboardingCompleted
-              ? const HomeScreen()
+              ? const AppLockGate(child: HomeScreen())
               : const OnboardingScreen(),
         );
       },

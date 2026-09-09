@@ -30,10 +30,10 @@ class AppLauncherService {
     final matches = await searchApps(appName);
 
     if (matches.isEmpty) {
-      return 'Could not find app "$appName". Try being more specific.';
+      return 'Could not find app "$appName". It may not be installed.';
     }
 
-    // Try exact match first
+    // Prefer an exact (case-insensitive) name match...
     AppInfo? target;
     for (final app in matches) {
       if (app.name.toLowerCase() == appName.toLowerCase()) {
@@ -41,11 +41,28 @@ class AppLauncherService {
         break;
       }
     }
+
+    // ...otherwise require the query to be unambiguous before guessing.
+    if (target == null && matches.length > 1) {
+      final names = matches
+          .take(3)
+          .map((app) => '"${app.name}"')
+          .join(', ');
+      return 'Multiple apps match "$appName": $names. '
+          'Specify which one to open.';
+    }
     target ??= matches.first;
 
     try {
-      await InstalledApps.startApp(target.packageName);
-      return 'Opened ${target.name}';
+      final launched = await InstalledApps.startApp(target.packageName);
+      if (launched == true) {
+        return 'Opened ${target.name}';
+      }
+      // Android refused or the plugin could not confirm the launch — never
+      // claim success without evidence.
+      return 'Could not launch ${target.name} '
+          '(package ${target.packageName}). Android refused the launch '
+          'request or returned no confirmation.';
     } catch (e) {
       return 'Error opening ${target.name}: $e';
     }
@@ -54,8 +71,12 @@ class AppLauncherService {
   /// Open an app by exact package name
   Future<String> openPackage(String packageName) async {
     try {
-      await InstalledApps.startApp(packageName);
-      return 'Launched $packageName';
+      final launched = await InstalledApps.startApp(packageName);
+      if (launched == true) {
+        return 'Launched $packageName';
+      }
+      return 'Could not launch $packageName. The package may not be '
+          'installed, or Android refused the launch request.';
     } catch (e) {
       return 'Error launching $packageName: $e';
     }

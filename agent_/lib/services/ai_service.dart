@@ -463,89 +463,92 @@ Answer questions, explain concepts, brainstorm, write emails/messages, and chat 
       }
 
       final client = http.Client();
-      final request = http.Request('POST', Uri.parse(requestUrl));
-      request.headers.addAll(_requestHeaders());
-
-      request.body = jsonEncode({
-        'model': _model,
-        'messages': messages,
-        'temperature': _temperature,
-        'max_tokens': _effectiveMaxTokens,
-        'stream': true,
-      });
-
-      final response = await client
-          .send(request)
-          .timeout(const Duration(minutes: 30));
-
-      if (response.statusCode != 200) {
-        await response.stream.drain();
-        client.close();
-        if (response.statusCode == 401 || response.statusCode == 403) {
-          throw _PermanentAuthenticationException(
-            _authenticationError(response.statusCode),
-          );
-        }
-        throw Exception('API error (${response.statusCode}).');
-      }
-
       final accumulatedContent = StringBuffer();
-      bool inThinkBlock = false;
+      try {
+        final request = http.Request('POST', Uri.parse(requestUrl));
+        request.headers.addAll(_requestHeaders());
 
-      // Listen to response stream
-      final lineStream = response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter());
+        request.body = jsonEncode({
+          'model': _model,
+          'messages': messages,
+          'temperature': _temperature,
+          'max_tokens': _effectiveMaxTokens,
+          'stream': true,
+        });
 
-      await for (final line in lineStream) {
-        final trimmedLine = line.trim();
-        if (trimmedLine.isEmpty) continue;
-        if (trimmedLine.startsWith('data:')) {
-          final dataStr = trimmedLine.substring(5).trim();
-          if (dataStr == '[DONE]') break;
-          try {
-            final json = jsonDecode(dataStr);
-            if (json is Map && json['choices'] is List) {
-              final choices = json['choices'] as List;
-              if (choices.isNotEmpty) {
-                final choice = choices[0];
-                if (choice is! Map) continue;
-                final rawDelta = choice['delta'];
-                final delta = rawDelta is Map ? rawDelta : const {};
-                final rawContent = delta['content'];
-                if (rawContent is String && rawContent.isNotEmpty) {
-                  final content = rawContent;
-                  accumulatedContent.write(content);
+        final response = await client
+            .send(request)
+            .timeout(const Duration(minutes: 30));
 
-                  // Handle <think> block stripping on the fly for better stream styling
-                  if (content.contains('<think>')) {
-                    inThinkBlock = true;
-                    // If there is text before <think>, yield it
-                    final parts = content.split('<think>');
-                    if (parts[0].isNotEmpty) {
-                      yield parts[0];
+        if (response.statusCode != 200) {
+          await response.stream.drain<void>();
+          if (response.statusCode == 401 || response.statusCode == 403) {
+            throw _PermanentAuthenticationException(
+              _authenticationError(response.statusCode),
+            );
+          }
+          throw Exception('API error (${response.statusCode}).');
+        }
+
+        bool inThinkBlock = false;
+
+        // Listen to response stream
+        final lineStream = response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter());
+
+        await for (final line in lineStream) {
+          final trimmedLine = line.trim();
+          if (trimmedLine.isEmpty) continue;
+          if (trimmedLine.startsWith('data:')) {
+            final dataStr = trimmedLine.substring(5).trim();
+            if (dataStr == '[DONE]') break;
+            try {
+              final json = jsonDecode(dataStr);
+              if (json is Map && json['choices'] is List) {
+                final choices = json['choices'] as List;
+                if (choices.isNotEmpty) {
+                  final choice = choices[0];
+                  if (choice is! Map) continue;
+                  final rawDelta = choice['delta'];
+                  final delta = rawDelta is Map ? rawDelta : const {};
+                  final rawContent = delta['content'];
+                  if (rawContent is String && rawContent.isNotEmpty) {
+                    final content = rawContent;
+                    accumulatedContent.write(content);
+
+                    // Handle <think> block stripping on the fly for better stream styling
+                    if (content.contains('<think>')) {
+                      inThinkBlock = true;
+                      // If there is text before <think>, yield it
+                      final parts = content.split('<think>');
+                      if (parts[0].isNotEmpty) {
+                        yield parts[0];
+                      }
+                    } else if (content.contains('</think>')) {
+                      inThinkBlock = false;
+                      // If there is text after </think>, yield it
+                      final parts = content.split('</think>');
+                      if (parts.length > 1 && parts[1].isNotEmpty) {
+                        yield parts[1];
+                      }
+                    } else if (!inThinkBlock) {
+                      yield content;
                     }
-                  } else if (content.contains('</think>')) {
-                    inThinkBlock = false;
-                    // If there is text after </think>, yield it
-                    final parts = content.split('</think>');
-                    if (parts.length > 1 && parts[1].isNotEmpty) {
-                      yield parts[1];
-                    }
-                  } else if (!inThinkBlock) {
-                    yield content;
                   }
+                  if (choice['finish_reason'] != null) break;
                 }
-                if (choice['finish_reason'] != null) break;
               }
+            } catch (_) {
+              // Ignore incomplete chunks
             }
-          } catch (_) {
-            // Ignore incomplete chunks
           }
         }
+      } finally {
+        // Always release the underlying socket — including when the caller
+        // cancels the subscription ("stop generation") mid-stream.
+        client.close();
       }
-
-      client.close();
 
       // Clean up final accumulated response and add to history
       String finalResponse = accumulatedContent.toString().trim();

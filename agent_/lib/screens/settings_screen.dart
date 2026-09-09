@@ -31,6 +31,8 @@ import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 import '../config/feature_flags.dart';
 import '../services/developer_config_service.dart';
+import '../services/biometric_service.dart';
+import '../widgets/app_lock_gate.dart';
 import '../widgets/unified_task_workspace.dart';
 import 'developer/developer_console_home.dart';
 import 'settings/appearance_settings.dart';
@@ -98,6 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _memoryLoading = true;
   final SettingsService _settingsService = SettingsService();
   bool _developerModeEnabled = false;
+  bool _appLockEnabled = false;
 
   /// Android-style seven-tap activation (About → Build number).
   final _BuildNumberTapController _buildNumberTaps = _BuildNumberTapController();
@@ -239,6 +242,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         _buildNumber = info.buildNumber.isEmpty ? 'Unavailable' : info.buildNumber;
         _developerLoading = false;
       });
+      // App Lock state comes straight from the persisted preference so the
+      // toggle reflects reality even if the gate widget was never mounted.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (mounted) {
+          setState(() {
+            _appLockEnabled = prefs.getBool(kAppLockEnabledKey) ?? false;
+          });
+        }
+      } catch (_) {
+        // Preference read failure keeps the default (off) — never fake state.
+      }
       if (_developerModeEnabled) {
         await _loadUpgradeHistory();
         await _refreshDeveloperDiagnostics();
@@ -967,6 +982,66 @@ class _SettingsScreenState extends State<SettingsScreen>
         borderSide: BorderSide(color: c.colors.accent, width: 1.8),
       ),
       floatingLabelBehavior: FloatingLabelBehavior.auto,
+    );
+  }
+
+  /// App Lock toggle: requires a working biometric/credential enrollment
+  /// before the gate is enabled, and authenticates once to prove it.
+  Widget _buildAppLockTile() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: const Text('App Lock'),
+      subtitle: Text(
+        _appLockEnabled
+            ? 'Biometric or device credential is required to open Agent Cypher'
+            : 'Require fingerprint, face, or device credential to open the app',
+      ),
+      value: _appLockEnabled,
+      onChanged: (val) async {
+        if (!val) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(kAppLockEnabledKey, false);
+          if (mounted) setState(() => _appLockEnabled = false);
+          return;
+        }
+        final status = BiometricService().getBiometricStatus();
+        if (!status.available) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Biometrics are not available or enrolled on this device, '
+                  'so the App Lock cannot be enabled.',
+                ),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+        // Prove the lock works before persisting the enablement.
+        final result = await BiometricService().authenticateWithFallback(
+          biometricReason: 'Confirm to enable the App Lock',
+          deviceCredentialReason:
+              'Confirm with your device PIN or pattern to enable the App Lock',
+        );
+        if (!result.success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'App Lock was not enabled: authentication did not succeed.',
+                ),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(kAppLockEnabledKey, true);
+        if (mounted) setState(() => _appLockEnabled = true);
+      },
     );
   }
 
@@ -1755,6 +1830,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 description:
                     'Provider keys remain in the existing secure credential path.',
               ),
+              _buildAppLockTile(),
               _buildMemoryManager(),
               _buildCapabilityAvailabilityTile(
                 icon: Icons.history_rounded,

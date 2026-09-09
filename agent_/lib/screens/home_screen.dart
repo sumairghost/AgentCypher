@@ -52,6 +52,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   AppLifecycleState _appLifecycleState = AppLifecycleState.resumed;
   Timer? _overlayHistoryTimer;
 
+  // Cancellable chat generation: Stop completes the completer and cancels the
+  // subscription so an in-flight model stream actually stops mid-response.
+  StreamSubscription<String>? _chatStreamSub;
+  Completer<void>? _chatStreamStopped;
+
   @override
   void initState() {
     super.initState();
@@ -196,21 +201,60 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           );
       String accumulated = '';
 
-      await for (final chunk in stream) {
-        accumulated += chunk;
-        if (mounted) {
-          setState(() {
-            _messages[assistantIndex] = ChatMessage(
-              role: 'assistant',
-              content: accumulated,
-            );
-          });
-          _scrollToBottom();
-        }
+      // Cancellable consumption: the Stop button completes [_chatStreamStopped]
+      // and cancels the subscription so generation actually stops mid-stream
+      // (the underlying HTTP socket is closed by AiService's finally block).
+      final streamDone = Completer<void>();
+      final stopped = Completer<void>();
+      final sub = stream.listen(
+        (chunk) {
+          accumulated += chunk;
+          if (mounted) {
+            setState(() {
+              _messages[assistantIndex] = ChatMessage(
+                role: 'assistant',
+                content: accumulated,
+              );
+            });
+            _scrollToBottom();
+          }
+        },
+        onError: (Object error) {
+          if (!streamDone.isCompleted) streamDone.completeError(error);
+        },
+        onDone: () {
+          if (!streamDone.isCompleted) streamDone.complete();
+        },
+        cancelOnError: true,
+      );
+      _chatStreamSub = sub;
+      _chatStreamStopped = stopped;
+      try {
+        await Future.any([streamDone.future, stopped.future]);
+      } finally {
+        _chatStreamSub = null;
+        _chatStreamStopped = null;
+        await sub.cancel();
       }
       await _saveSession();
 
       if (!mounted) return;
+
+      // A user-initiated stop keeps the partial text but must never auto-run a
+      // half-received action payload or speak the truncated fragment.
+      if (stopped.isCompleted) {
+        if (_messages.isNotEmpty && _messages.length > assistantIndex) {
+          setState(() {
+            _messages[assistantIndex] = ChatMessage(
+              role: 'assistant',
+              content: accumulated.trim().isEmpty
+                  ? 'Generation stopped.'
+                  : accumulated,
+            );
+          });
+        }
+        return;
+      }
 
       // Check if it's an action
       final action = _aiService.parseAction(accumulated);
@@ -647,6 +691,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _overlayHistoryTimer?.cancel();
+    _chatStreamStopped?.complete();
+    unawaited(_chatStreamSub?.cancel());
+    _chatStreamSub = null;
+    _chatStreamStopped = null;
     _textController.dispose();
     _scrollController.dispose();
     _voiceService.dispose();
@@ -965,6 +1013,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _handleStopRequested() {
+    // Stop the in-flight chat stream (if any) and any running task executor.
+    _chatStreamStopped?.complete();
+    unawaited(_chatStreamSub?.cancel());
+    _chatStreamSub = null;
+    _chatStreamStopped = null;
     _actionHandler.cancelTask();
     if (mounted) {
       setState(() {

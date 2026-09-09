@@ -2,7 +2,7 @@ package com.cypherghost.agentcypher
 
 import android.content.Intent
 import android.provider.Settings
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.EventChannel
@@ -16,7 +16,7 @@ import android.net.Uri
 import java.io.File
 import java.util.UUID
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val CHANNEL = "com.cypherghost.agentcypher/accessibility"
     private val EVENT_CHANNEL = "com.cypherghost.agentcypher/accessibility_events"
     private val FILES_CHANNEL = "com.cypherghost.agentcypher/files"

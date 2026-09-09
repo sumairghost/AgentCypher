@@ -1,6 +1,7 @@
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_ios/local_auth_ios.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Biometric authentication service
@@ -14,22 +15,44 @@ class BiometricService {
 
   BiometricService._internal();
 
-  late final LocalAuthentication _auth;
-  late SharedPreferences _prefs;
+  LocalAuthentication? _auth;
+  SharedPreferences? _prefs;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   bool _biometricsAvailable = false;
   List<BiometricType> _availableBiometrics = [];
+  bool _initialized = false;
 
+  /// Idempotent and exception-safe initialization. A partially failed app
+  /// startup must never crash a later consumer (for example the app-lock
+  /// gate), so every failure degrades to "biometrics unavailable".
   Future<void> init() async {
-    _auth = LocalAuthentication();
-    _prefs = await SharedPreferences.getInstance();
-    await _checkBiometricAvailability();
+    if (_initialized) return;
+    try {
+      _auth ??= LocalAuthentication();
+      _prefs ??= await SharedPreferences.getInstance();
+      await _checkBiometricAvailability();
+      _initialized = true;
+    } catch (e) {
+      _biometricsAvailable = false;
+      _availableBiometrics = [];
+    }
+  }
+
+  Future<void> _ensureInitialized() async {
+    if (!_initialized) await init();
   }
 
   /// Check if biometrics are available on device
   Future<void> _checkBiometricAvailability() async {
+    final auth = _auth;
+    if (auth == null) {
+      _biometricsAvailable = false;
+      _availableBiometrics = [];
+      return;
+    }
     try {
-      _biometricsAvailable = await _auth.canCheckBiometrics;
-      _availableBiometrics = await _auth.getAvailableBiometrics();
+      _biometricsAvailable = await auth.canCheckBiometrics;
+      _availableBiometrics = await auth.getAvailableBiometrics();
     } catch (e) {
       _biometricsAvailable = false;
       _availableBiometrics = [];
@@ -59,12 +82,14 @@ class BiometricService {
     required String reason,
     bool useErrorDialogs = true,
   }) async {
-    if (!_biometricsAvailable) {
+    await _ensureInitialized();
+    final auth = _auth;
+    if (auth == null || !_biometricsAvailable) {
       return false;
     }
 
     try {
-      final authenticated = await _auth.authenticate(
+      final authenticated = await auth.authenticate(
         localizedReason: reason,
         options: AuthenticationOptions(
           stickyAuth: true,
@@ -91,8 +116,11 @@ class BiometricService {
   Future<bool> authenticateWithDeviceCredential({
     required String reason,
   }) async {
+    await _ensureInitialized();
+    final auth = _auth;
+    if (auth == null) return false;
     try {
-      final authenticated = await _auth.authenticate(
+      final authenticated = await auth.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(
           stickyAuth: true,
@@ -151,13 +179,20 @@ class BiometricService {
 
   /// Optional: Check if biometric enrollment is required
   Future<bool> isBiometricEnrollmentRequired() async {
-    return !_biometricsAvailable && await _auth.canCheckBiometrics == false;
+    await _ensureInitialized();
+    return !_biometricsAvailable;
   }
 
   /// Optional: Check if device has PIN/Pattern set
   Future<bool> hasDeviceCredential() async {
+    await _ensureInitialized();
+    final auth = _auth;
+    if (auth == null) return false;
     try {
-      return await _auth.canCheckBiometrics;
+      // A device that supports secure authentication has either biometric
+      // hardware or a device credential enrolled. `isDeviceSupported` reflects
+      // that without confusing "no fingerprint hardware" with "no lock".
+      return await auth.isDeviceSupported();
     } catch (e) {
       return false;
     }
@@ -190,18 +225,19 @@ class BiometricService {
     return _availableBiometrics.contains(type);
   }
 
-  /// Optional security: Store sensitive app data locked behind biometric
-  /// This would typically use encrypted storage
+  /// Store sensitive app data. Values live in the platform secure store
+  /// (Keystore-backed), never in plain preferences.
   Future<void> storeSensitiveData(String key, String value) async {
-    // In production, use flutter_secure_storage with biometric unlock
-    // For now, mark as requiring biometric to access
-    await _prefs.setString('secure_$key', value);
-    await _prefs.setBool('biometric_required_$key', true);
+    await _ensureInitialized();
+    await _secureStorage.write(key: 'secure_$key', value: value);
+    await _prefs?.setBool('biometric_required_$key', true);
   }
 
   /// Retrieve sensitive data (requires biometric)
   Future<String?> getSensitiveData(String key) async {
-    final requiresBiometric = _prefs.getBool('biometric_required_$key') ?? false;
+    await _ensureInitialized();
+    final requiresBiometric =
+        _prefs?.getBool('biometric_required_$key') ?? false;
 
     if (requiresBiometric) {
       final authenticated = await authenticate(
@@ -213,7 +249,7 @@ class BiometricService {
       }
     }
 
-    return _prefs.getString('secure_$key');
+    return _secureStorage.read(key: 'secure_$key');
   }
 }
 
