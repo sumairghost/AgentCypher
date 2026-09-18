@@ -413,7 +413,7 @@ class CypherThemeData {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surface.withOpacity(0.9),
         elevation: 0,
-        height: CypherDimensions.navBarHeightMobile,
+        height: CypherDimensions.navBarHeight,
         indicatorColor: colors.accent.withOpacity(0.15),
         labelTextStyle: WidgetStateProperty.all(typography.navLabel),
         iconTheme: WidgetStateProperty.resolveWith((states) {

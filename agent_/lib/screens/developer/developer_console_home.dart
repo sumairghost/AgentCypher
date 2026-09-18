@@ -124,8 +124,11 @@ class _DeveloperConsoleHomeState extends State<DeveloperConsoleHome>
     }
 
     try {
-      final result = await Connectivity().checkConnectivity();
-      final hasNetwork = result != ConnectivityResult.none; // 5.x: single value
+      final dynamic connectivityResult = await Connectivity().checkConnectivity();
+      final hasNetwork = connectivityResult is List
+          // 6.x/7.x returns List<ConnectivityResult>.
+          ? !connectivityResult.contains(ConnectivityResult.none)
+          : connectivityResult != ConnectivityResult.none; // 5.x: single value
       _networkHealth = hasNetwork ? DevHealth.ok : DevHealth.warning;
       _networkDetail = hasNetwork ? result.name : 'No connectivity';
 

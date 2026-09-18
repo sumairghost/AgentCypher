@@ -37,6 +37,13 @@ class TaskTelemetryService {
   String? _lastStatus;
   TaskTelemetrySnapshot? _lastSnapshot;
 
+  final List<String> _errorLog = <String>[];
+  String _failureCategory = '';
+  String _diagnosisLikelyCause = '';
+  DateTime? _lastEventAt;
+  String _diagnosisFinalResult = '';
+  String _diagnosisEvidence = '';
+
   // Controlled self-upgrade state (published by ControlledUpgradeService).
   String _upgradeStage = '';
   String _upgradeProblem = '';
@@ -74,6 +81,12 @@ class TaskTelemetryService {
     _confidence = null;
     _isRunning = true;
     _lastStatus = null;
+    _errorLog.clear();
+    _failureCategory = '';
+    _diagnosisLikelyCause = '';
+    _lastEventAt = null;
+    _diagnosisFinalResult = '';
+    _diagnosisEvidence = '';
     _publish();
   }
 
@@ -89,13 +102,35 @@ class TaskTelemetryService {
   void addEvent(String stage, String detail) {
     final normalizedStage = stage.trim().isEmpty ? 'Event' : stage.trim();
     final normalizedDetail = _sanitizeDetail(detail);
+    final now = DateTime.now();
     _events.add(TaskExecutionEvent(
       stage: normalizedStage,
       detail: normalizedDetail,
-      timestamp: DateTime.now(),
+      timestamp: now,
     ));
     if (_events.length > 80) _events.removeRange(0, _events.length - 80);
     _executionStage = normalizedStage;
+    _lastEventAt = now;
+    _publish();
+  }
+
+  /// Records a sanitized execution error for the Errors surface.
+  /// Bounded to the 20 most recent entries; also refreshes diagnosis fields.
+  void recordError(String detail, {String category = '', String cause = ''}) {
+    final normalized = _sanitizeDetail(detail);
+    if (normalized.isNotEmpty) {
+      _errorLog.add(normalized);
+      if (_errorLog.length > 20) {
+        _errorLog.removeRange(0, _errorLog.length - 20);
+      }
+    }
+    if (category.trim().isNotEmpty) _failureCategory = category.trim();
+    if (cause.trim().isNotEmpty) _diagnosisLikelyCause = cause.trim();
+    _lastEventAt = DateTime.now();
+    _diagnosisEvidence = normalized;
+    if (_diagnosisFinalResult.isEmpty && normalized.isNotEmpty) {
+      _diagnosisFinalResult = normalized;
+    }
     _publish();
   }
 
@@ -184,6 +219,7 @@ class TaskTelemetryService {
     int exitCode = 0,
     int elapsedMs = 0,
     String workingDirectory = '',
+    String output = '',
   }) {
     _workspaceCommands.add(WorkspaceCommandRecord(
       command: _sanitizeDetail(command),
@@ -191,6 +227,7 @@ class TaskTelemetryService {
       exitCode: exitCode,
       elapsedMs: elapsedMs,
       workingDirectory: _sanitizeDetail(workingDirectory),
+      output: _sanitizeDetail(output),
     ));
     if (_workspaceCommands.length > 40) {
       _workspaceCommands.removeRange(0, _workspaceCommands.length - 40);
@@ -277,6 +314,12 @@ class TaskTelemetryService {
       workspaceCommands: List<WorkspaceCommandRecord>.unmodifiable(_workspaceCommands),
       actionTimings: Map<String, int>.unmodifiable(_actionTimings),
       isRunning: _isRunning,
+      errors: List<String>.unmodifiable(_errorLog),
+      failureCategory: _failureCategory,
+      diagnosisLikelyCause: _diagnosisLikelyCause,
+      lastEventAt: _lastEventAt,
+      diagnosisFinalResult: _diagnosisFinalResult,
+      diagnosisEvidence: _diagnosisEvidence,
       routeSelection: _routeSelection,
       duplicateActionBlocks: _duplicateActionBlocks,
       staleScreenBlocks: _staleScreenBlocks,
@@ -326,6 +369,25 @@ class TaskDeveloperSnapshot {
   final int staleScreenBlocks;
   final int observationsReused;
 
+  /// Sanitized, bounded execution errors (Phase 4: Errors). Empty when none
+  /// have been reported by the task pipeline.
+  final List<String> errors;
+
+  /// Last pipeline failure category (e.g. timeout, permission, parsing).
+  final String failureCategory;
+
+  /// Most likely cause attributed to the last failure.
+  final String diagnosisLikelyCause;
+
+  /// Timestamp of the most recent execution event, if any.
+  final DateTime? lastEventAt;
+
+  /// Short human-readable suggested next action.
+  final String diagnosisFinalResult;
+
+  /// Bounded supporting detail for the current diagnosis.
+  final String diagnosisEvidence;
+
   // Controlled self-upgrade surface. The stock ControlledUpgradeService is a
   // no-op development stub, so these carry empty/neutral values; a real
   // service publishes richer state through TaskTelemetryService.
@@ -367,6 +429,12 @@ class TaskDeveloperSnapshot {
     this.upgradeCanApply = false,
     this.upgradePlan,
     this.upgradeHistory = const <UpgradeHistoryEntry>[],
+    this.errors = const <String>[],
+    this.failureCategory = '',
+    this.diagnosisLikelyCause = '',
+    this.lastEventAt,
+    this.diagnosisFinalResult = '',
+    this.diagnosisEvidence = '',
   });
 
   factory TaskDeveloperSnapshot.idle() => const TaskDeveloperSnapshot(
@@ -410,12 +478,18 @@ class WorkspaceCommandRecord {
   final int elapsedMs;
   final String workingDirectory;
 
+  /// Bounded, sanitized stdout/stderr captured for the controlled dev
+  /// workflow. Empty when nothing was produced; never contains secrets
+  /// (see [_sanitizeDetail] at record time).
+  final String output;
+
   const WorkspaceCommandRecord({
     required this.command,
     required this.succeeded,
     required this.exitCode,
     required this.elapsedMs,
     required this.workingDirectory,
+    this.output = '',
   });
 }
 
@@ -458,11 +532,19 @@ class UpgradeStageSnapshot {
   final List<String> files;
   final String error;
 
+  /// Short human-readable statement of the stage's intended outcome.
+  final String expectedResult;
+
+  /// Focused test identifiers validating this stage.
+  final List<String> selectedTests;
+
   const UpgradeStageSnapshot({
     required this.title,
     required this.status,
     this.files = const <String>[],
     this.error = '',
+    this.expectedResult = '',
+    this.selectedTests = const <String>[],
   });
 }
 
