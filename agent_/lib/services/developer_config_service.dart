@@ -154,9 +154,17 @@ class CypherDeveloperConfig extends ChangeNotifier {
   }
   /// Waits until persisted values are loaded.
   Future<void> ensureInitialized() {
-    _initCompleter ??= _init();
+    _initCompleter ??= Completer<void>();
+    if (!_initCompleter!.isCompleted && !_initStarted) {
+      _initStarted = true;
+      _init().then((_) {
+        if (!_initCompleter!.isCompleted) _initCompleter!.complete();
+      });
+    }
     return _initCompleter!.future;
   }
+
+  bool _initStarted = false;
 
   Future<void> _init() async {
     _prefs = await SharedPreferences.getInstance();

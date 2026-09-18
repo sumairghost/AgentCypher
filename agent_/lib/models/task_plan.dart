@@ -209,7 +209,7 @@ class TaskPlan {
           ['Plan contained zero steps.']);
     }
     if (stepList.length > 15) {
-      return const PlanValidationResult.invalid(
+      return PlanValidationResult.invalid(
           ['Plan exceeded 15 steps (${stepList.length}).']);
     }
 

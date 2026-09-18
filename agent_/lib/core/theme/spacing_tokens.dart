@@ -240,11 +240,11 @@ class CypherDimensions {
 
   // Tooltips
   static const double tooltipMaxWidth = 280;
-  static const double tooltipPadding = CypherSpacing.insetMd; // 8px all
+  static const double tooltipPadding = space4; // 8px all
   static const double tooltipArrowSize = 8;
 
   // Snackbars/Toasts
   static const double snackbarMinWidth = 288;
   static const double snackbarMaxWidth = 568;
-  static const double snackbarPadding = CypherSpacing.insetLg; // 12px all
+  static const double snackbarPadding = space6; // 12px all
 }

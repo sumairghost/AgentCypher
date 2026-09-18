@@ -2,6 +2,7 @@
 /// Type scale, font families, weights, line heights, letter spacing
 
 import 'package:flutter/material.dart';
+import 'color_tokens.dart';
 
 /// Font family definitions
 class CypherFontFamily {

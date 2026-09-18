@@ -200,7 +200,7 @@ class PlanExecutor {
           .toList();
       if (unmetDependencies.isNotEmpty) {
         final detail =
-            'Skipped because ${unmetDependencies.join(", "} did not complete.';
+            'Skipped because ${unmetDependencies.join(", ")} did not complete.';
         report('${step.intent}: $detail');
         results.add(StepResult(
             step: step, status: StepStatus.skipped, detail: detail));

@@ -96,6 +96,10 @@ class CypherGradientTokens {
     return isDark ? palette[400]! : palette[600]!;
   }
 
+  /// Public accent color for sibling token libraries (`glass_tokens.dart`
+  /// cannot read the library-private `_accentColor`).
+  Color get accentColor => _accentColor;
+
   Color get _accentColorLight {
     final palette = _accentMap;
     return isDark ? palette[300]! : palette[500]!;

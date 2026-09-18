@@ -1,6 +1,8 @@
 /// Glass material tokens for Agent Cypher design system
 /// Glass surface specifications, blur levels, borders, highlights
 
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'color_tokens.dart';
 import 'gradient_tokens.dart';
@@ -399,7 +401,7 @@ class CypherGlassTokens {
         borderRadius: BorderRadius.circular(_defaultRadius),
         boxShadow: [
           BoxShadow(
-            color: (gradientTokens?._accentColor ?? CypherColorPalette.crimson500)
+            color: (gradientTokens?.accentColor ?? CypherColorPalette.crimson500)
                 .withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),

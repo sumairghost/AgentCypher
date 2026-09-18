@@ -159,7 +159,7 @@ class CypherThemeData {
       accentColor: colors.accent,
     );
     defaultGlassSpec = GlassSpec.card(accentFamily: accentFamily);
-    spacing = const CypherSpacing();
+    spacing = CypherSpacing();
   }
 
   /// Build Material ThemeData from this theme
@@ -244,7 +244,7 @@ class CypherThemeData {
           borderRadius: BorderRadius.circular(CypherSpacing.radiusSm),
           side: BorderSide(color: colors.borderLight, width: CypherSpacing.borderHairline),
         ),
-        margin: const EdgeInsets.fromLTRB(
+        insetPadding: const EdgeInsets.fromLTRB(
           CypherSpacing.space16, CypherSpacing.space16, CypherSpacing.space16, CypherSpacing.space16,
         ),
       ),
@@ -413,7 +413,7 @@ class CypherThemeData {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surface.withOpacity(0.9),
         elevation: 0,
-        height: CypherSpacing.navBarHeightMobile,
+        height: CypherDimensions.navBarHeightMobile,
         indicatorColor: colors.accent.withOpacity(0.15),
         labelTextStyle: WidgetStateProperty.all(typography.navLabel),
         iconTheme: WidgetStateProperty.resolveWith((states) {

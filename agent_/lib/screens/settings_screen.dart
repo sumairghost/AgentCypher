@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/theme/cypher_theme.dart';
 import '../main.dart';
 import '../services/ai_service.dart';
 import '../services/provider/provider_manager.dart';

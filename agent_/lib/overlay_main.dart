@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -252,6 +253,11 @@ class _OverlayAppState extends State<OverlayApp> {
             _sendTask(result.recognizedWords);
           }
         },
+        onSoundLevelChange: (level) {
+          // Real recognizer amplitude; only meaningful while listening.
+          if (!_isListening) return;
+          _lastSoundLevel = level;
+        },
         listenOptions: stt.SpeechListenOptions(
           listenMode: stt.ListenMode.confirmation,
           partialResults: false,
@@ -291,15 +297,61 @@ class _OverlayAppState extends State<OverlayApp> {
     _audioPoller?.cancel();
     _audioPoller = null;
     _audioLevel = 0;
+    _lastSoundLevel = 0;
   }
 
+  /// Last level reported by the recognizer's `onSoundLevelChange` callback
+  /// (the only sound level surface in speech_to_text 7.x). Zero when not
+  /// listening or before the first event; never fabricated.
+  double _lastSoundLevel = 0;
+
   double _soundLevelNormalized() {
-    try {
-      final raw = _speech.getSoundLevel();
-      if (raw.isNaN || raw.isInfinite) return 0;
-      return (raw.clamp(0.0, 10.0) / 10.0).toDouble();
-    } catch (_) {
-      return 0;
+    final raw = _lastSoundLevel;
+    if (raw.isNaN || raw.isInfinite) return 0;
+    return (raw.clamp(0.0, 10.0) / 10.0).toDouble();
+  }
+
+  /// Human-readable name for the current overlay phase.
+  String _phaseName(AssistantOverlayPhase phase) {
+    switch (phase) {
+      case AssistantOverlayPhase.idle:
+        return 'Idle';
+      case AssistantOverlayPhase.expanded:
+        return 'Expanded';
+      case AssistantOverlayPhase.listening:
+        return 'Listening';
+      case AssistantOverlayPhase.thinking:
+        return 'Thinking';
+      case AssistantOverlayPhase.executing:
+        return 'Executing';
+      case AssistantOverlayPhase.success:
+        return 'Done';
+      case AssistantOverlayPhase.error:
+        return 'Error';
+      case AssistantOverlayPhase.awaitingApproval:
+        return 'Needs approval';
+    }
+  }
+
+  /// Short progress text shown while a task is running.
+  String _statusText(AssistantOverlayPhase phase) {
+    switch (phase) {
+      case AssistantOverlayPhase.idle:
+        return 'Ready';
+      case AssistantOverlayPhase.expanded:
+        return 'Expanded';
+      case AssistantOverlayPhase.listening:
+        return 'Listening…';
+      case AssistantOverlayPhase.thinking:
+        return 'Planning…';
+      case AssistantOverlayPhase.executing:
+        return 'Running task…';
+      case AssistantOverlayPhase.success:
+        return 'Task completed';
+      case AssistantOverlayPhase.error:
+        return 'Task failed';
+      case AssistantOverlayPhase.awaitingApproval:
+        return 'Waiting for your approval';
     }
   }
 

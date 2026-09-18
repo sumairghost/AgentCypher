@@ -462,6 +462,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildBackgroundGlows(bool isDark) {
+    final c = context.cypher.colors;
     return Positioned.fill(
       child: Stack(
         children: [

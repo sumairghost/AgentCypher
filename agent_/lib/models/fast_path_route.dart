@@ -1,5 +1,7 @@
 library;
 
+import 'task_plan.dart';
+
 /// Small typed result from deterministic fast-path routing.
 /// Never produces an LLM call.
 class FastPathRoute {

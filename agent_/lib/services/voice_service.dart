@@ -28,15 +28,15 @@ class VoiceService {
   /// Live microphone sound level normalized to 0..1 (0 when unavailable or
   /// not listening). Maps to orb jelly deformation while listening.
   ///
-  /// Backed by `SpeechToText.getSoundLevel()`; never fabricated.
+  /// Backed by the recognizer's `onSoundLevelChange` callback (the only sound
+  /// level surface in speech_to_text 7.x); never fabricated. Resets to 0
+  /// whenever listening stops.
+  double _lastSoundLevel = 0;
+
   double get soundLevelNormalized {
-    try {
-      final raw = _speech.getSoundLevel();
-      if (raw.isNaN || raw.isInfinite) return 0;
-      return (raw.clamp(0.0, 10.0) / 10.0).toDouble();
-    } catch (_) {
-      return 0;
-    }
+    final raw = _lastSoundLevel;
+    if (raw.isNaN || raw.isInfinite) return 0;
+    return (raw.clamp(0.0, 10.0) / 10.0).toDouble();
   }
 
   // ─── Wake word ("Hey Cypher") ───────────────────────────────────────────
@@ -143,6 +143,7 @@ class VoiceService {
 
           if (result.finalResult) {
             _isListening = false;
+            _lastSoundLevel = 0;
             _emit(
               VoiceEvent(
                 type: 'recognized',
@@ -162,6 +163,11 @@ class VoiceService {
             );
           }
         },
+        onSoundLevelChange: (level) {
+          // Real recognizer amplitude; only meaningful while listening.
+          if (!_isListening) return;
+          _lastSoundLevel = level;
+        },
         listenOptions: stt.SpeechListenOptions(
           listenMode: stt.ListenMode.confirmation,
           partialResults: true,
@@ -177,6 +183,7 @@ class VoiceService {
   /// Stop listening
   Future<void> stopListening() async {
     _isListening = false;
+    _lastSoundLevel = 0;
     await _speech.stop();
     _emit(VoiceEvent(type: 'listening_stopped', message: 'Stopped listening'));
   }

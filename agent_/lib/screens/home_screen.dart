@@ -466,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (mounted) {
           setState(() {
             _messages.add(
-              const ChatMessage(
+              ChatMessage(
                 role: 'assistant',
                 content: 'Task cancelled before any action was performed.',
               ),

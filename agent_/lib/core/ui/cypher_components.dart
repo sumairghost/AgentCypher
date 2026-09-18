@@ -5,6 +5,8 @@
 
 import 'package:flutter/material.dart';
 import '../theme/cypher_theme.dart';
+import '../theme/spacing_tokens.dart';
+import '../theme/glass_tokens.dart';
 
 /// Ambient page background: token gradient plus two faint accent glows.
 ///

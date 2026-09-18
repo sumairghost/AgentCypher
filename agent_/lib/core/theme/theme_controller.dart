@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cypher_theme.dart';
 import 'color_tokens.dart';
+import 'gradient_tokens.dart';
 
 /// Controller that manages theme state and persists user preferences
 class ThemeController extends ChangeNotifier {

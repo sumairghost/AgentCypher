@@ -129,6 +129,7 @@ class CapabilityRegistry {
     id: 'device.set_volume_or_brightness',
     apps: [],
     actions: ['set_volume', 'set_brightness'],
+    appVersionAssumption: 'Android volume/brightness controls accept integer levels 0-100; exact range varies by device ROM.',
     inputSchema: {'level': 'int', 'kind': 'string'},
     outputSchema: {'verified_value': 'int'},
     safety: SafetyClass.reversible,

@@ -4,10 +4,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/theme/cypher_theme.dart';
 import '../../core/theme/spacing_tokens.dart';
 import '../../core/theme/theme_controller.dart';
+import '../../core/ui/cypher_components.dart';
 import '../../services/ai_service.dart';
 import '../../services/developer_config_service.dart';
 import '../../services/permission_service.dart';
@@ -123,14 +125,14 @@ class _DeveloperConsoleHomeState extends State<DeveloperConsoleHome>
 
     try {
       final result = await Connectivity().checkConnectivity();
-      final hasNetwork = result.any((r) => r != ConnectivityResult.none);
+      final hasNetwork = result != ConnectivityResult.none; // 5.x: single value
       _networkHealth = hasNetwork ? DevHealth.ok : DevHealth.warning;
-      _networkDetail = hasNetwork
-          ? result
-              .where((r) => r != ConnectivityResult.none)
-              .map((r) => r.name)
-              .join(', ')
-          : 'No connectivity';
+      _networkDetail = hasNetwork ? result.name : 'No connectivity';
+
+
+
+
+
     } catch (_) {
       _networkHealth = DevHealth.unavailable;
       _networkDetail = 'Connectivity probe unavailable';
