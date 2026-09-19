@@ -39,7 +39,17 @@ class AgentActionResult {
   final bool success;
   final String? details;
 
-  AgentActionResult({required this.actionType, required this.success, this.details});
+  /// Raw payload (e.g. a screenshot as base64) when the action produces one.
+  /// Deliberately NOT persisted in [toJson] to keep stored sessions small —
+  /// it exists only for the live UI surface of the current run.
+  final String? payloadBase64;
+
+  AgentActionResult({
+    required this.actionType,
+    required this.success,
+    this.details,
+    this.payloadBase64,
+  });
 
   Map<String, dynamic> toJson() => {'actionType': actionType, 'success': success, 'details': details};
 

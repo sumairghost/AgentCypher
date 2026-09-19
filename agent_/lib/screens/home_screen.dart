@@ -15,6 +15,9 @@ import '../widgets/message_bubble.dart';
 import '../widgets/cypher_composer.dart';
 import '../widgets/model_selector_sheet.dart';
 import '../services/chat_history_service.dart';
+import '../core/agent/agent_runtime.dart';
+import '../core/agent/fast_router.dart';
+import '../core/agent/tool.dart';
 import '../services/notification_service.dart';
 import 'settings_screen.dart';
 import 'task_history_screen.dart';
@@ -37,6 +40,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final ActionHandler _actionHandler = ActionHandler();
   final VoiceService _voiceService = VoiceService();
   final NotificationService _notificationService = NotificationService();
+
+  // Fast path (deterministic local routing). Lazily built and sharing the
+  // SAME ActionHandler instance the rest of the screen uses, so fast and
+  // agent paths cannot diverge in behavior or state.
+  late final ToolRegistry _toolRegistry =
+      ToolRegistry.withActionHandlerDefaults(_actionHandler);
+  late final FastRouter _fastRouter = FastRouter(
+    _toolRegistry,
+    _actionHandler.appLauncher,
+    readVolumeLevel: () async {
+      final level = await _actionHandler.systemControl.getVolume();
+      return level < 0 ? null : level;
+    },
+  );
+
+  /// Single owner of agent-path execution: single-flight, bounded run
+  /// lifetime, typed events, approval gate. Fast Path stays outside the
+  /// runtime so deterministic commands never pay agent overhead.
+  late final CypherAgentRuntime _agentRuntime = CypherAgentRuntime(
+    actionHandler: _actionHandler,
+    aiService: _aiService,
+    screenAutomation: _actionHandler.screenAutomation,
+    onApproval: _approveToolUse,
+  );
 
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
@@ -133,6 +160,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
     }
     if (!mounted) return;
+
+    // Fast path: resolve simple deterministic commands locally — no LLM, no
+    // network, no executor initialization. Ambiguous or unresolvable input
+    // falls through to the existing paths unchanged. Skipped while another
+    // action is still running so screen-state actions cannot interleave.
+    if (!_isLoading) {
+      final fast = await _fastRouter.route(text.trim());
+      if (fast is FastAction) {
+        await _runFastAction(fast);
+        return;
+      }
+    }
 
     if (_aiService.isImageGenerationRequest(text.trim())) {
       try {
@@ -352,6 +391,67 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Executes a locally-routed fast action through the shared tool registry.
+  /// Reporting is honest: the handler's verified outcome (including
+  /// read-back verification for volume/brightness) is what reaches the chat.
+  Future<void> _runFastAction(FastAction fast) async {
+    developer.log(
+      'Fast route: ${fast.toolId} (${fast.routeLatency.inMicroseconds}µs)',
+      name: 'AgentCypher.FastRouter',
+    );
+    setState(() {
+      _isLoading = true;
+      _messages.add(
+        ChatMessage(role: 'assistant', content: '⚡ ${fast.displayIntent}'),
+      );
+    });
+    _scrollToBottom();
+    try {
+      final tool = _toolRegistry.lookup(fast.toolId);
+      if (tool == null) {
+        throw Exception(
+          'Fast action tool "${fast.toolId}" is not registered.',
+        );
+      }
+      final result = await tool.execute(ToolInvocation(params: fast.arguments));
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          ChatMessage(
+            role: 'assistant',
+            content: result.success
+                ? (result.detail.isNotEmpty
+                      ? result.detail
+                      : '${fast.displayIntent} — done.')
+                : '⚠️ ${result.detail.isNotEmpty ? result.detail : '${fast.displayIntent} failed.'}',
+          ),
+        );
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          ChatMessage(
+            role: 'assistant',
+            content:
+                '⚠️ ${fast.displayIntent} failed: ${error.toString().replaceFirst('Exception: ', '')}',
+          ),
+        );
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _scrollToBottom();
+        unawaited(_updateOverlayState().catchError((error) {
+          developer.log(
+            'Overlay state update failed: $error',
+            name: 'AgentCypher',
+          );
+        }));
+      }
+    }
+  }
+
   bool _looksLikeAgentTask(String text) {
     final normalized = text.toLowerCase().trim();
     const taskMarkers = <String>[
@@ -476,14 +576,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
       await _showTaskProgressOverlay('Starting: $goal');
-      final result = await _actionHandler.execute(
-        AgentAction(
-          action: 'execute_task',
-          params: {'goal': goal},
-          response: '',
-        ),
-        aiService: _aiService,
-        onProgress: (message) {
+      developer.log('Agent path selected', name: 'AgentCypher.FastRouter');
+      final result = await _agentRuntime.runTask(
+        goal,
+        hooks: AgentRunHooks(
+          onProgress: (message) {
           developer.log('Task progress: $message', name: 'AgentCypher');
           _sendOverlayEvent('OVERLAY_PROGRESS', message);
           if (mounted) {
@@ -523,6 +620,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           );
           return approved == true;
         },
+      ),
       );
       if (!mounted) return;
       setState(() {
@@ -530,17 +628,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ChatMessage(
             role: 'assistant',
             content: result.success
-                ? (result.details ?? 'Task completed.')
-                : 'âš ï¸ ${result.details ?? 'Task failed.'}',
-            actionResult: result,
+                ? (result.summary.isNotEmpty
+                      ? result.summary
+                      : 'Task completed.')
+                : 'âš ï¸ ${result.summary.isNotEmpty ? result.summary : 'Task failed.'}',
           ),
         );
       });
       _sendOverlayEvent(
         'OVERLAY_TASK_FINISHED',
         result.success
-            ? (result.details ?? 'Task complete.')
-            : 'Task failed: ${result.details ?? 'Unknown error'}',
+            ? (result.summary.isNotEmpty
+                  ? result.summary
+                  : 'Task complete.')
+            : 'Task failed: ${result.summary}',
       );
       await _saveSession();
     } catch (error) {
@@ -1018,12 +1119,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     unawaited(_chatStreamSub?.cancel());
     _chatStreamSub = null;
     _chatStreamStopped = null;
+    _agentRuntime.cancelTask(_agentRuntime.activeTaskId);
     _actionHandler.cancelTask();
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  /// Approval callback for confirmation-required tools invoked through the
+  /// runtime. The gate itself lives in the execution layer; this dialog is
+  /// only the human decision surface.
+  Future<bool> _approveToolUse(String toolId, String reason) async {
+    if (!mounted) return false;
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Approval required'),
+        content: Text('$reason\n\nTool: $toolId'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Deny'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+    return approved == true;
   }
 
   Future<void> _openSettings() async {

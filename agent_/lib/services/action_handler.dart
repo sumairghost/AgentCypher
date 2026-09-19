@@ -31,6 +31,10 @@ class ActionHandler {
   FileOperationService get fileOps => _fileOps;
   WebOperationService get webOps => _webOps;
 
+  /// Exposed for the fast router's "known application" check; the launcher
+  /// keeps its own installed-apps cache.
+  AppLauncherService get appLauncher => _appLauncher;
+
   /// The currently running task executor, if any
   TaskExecutor? _currentExecutor;
 
@@ -46,6 +50,9 @@ class ActionHandler {
     try {
       String result;
       bool success = false;
+      // Captured payload (screenshot image data) for actions that produce
+      // one; surfaced via AgentActionResult.payloadBase64.
+      String? screenshotPayload;
 
       switch (action.action) {
         case 'open_app':
@@ -117,20 +124,52 @@ class ActionHandler {
           break;
 
         case 'set_volume':
-          result = await _systemControl.setVolume(
-            (action.params['level'] as num?)?.toInt() ?? 50,
-          );
-          // REAL VERIFICATION: Verify the volume actually changed
-          success = !result.startsWith('Error');
-          break;
+          {
+            final level = (action.params['level'] as num?)?.toInt();
+            if (level == null || level < 0 || level > 100) {
+              result = 'Invalid volume level (expected 0-100).';
+              success = false;
+              break;
+            }
+            result = await _systemControl.setVolume(level);
+            // REAL VERIFICATION: read the value back. The plugin applies the
+            // change asynchronously, so poll briefly — bounded at 4 x 250ms.
+            // getVolume() returns -1 when the read-back is unavailable.
+            var verified = false;
+            for (var attempt = 0; attempt < 4 && !verified; attempt++) {
+              await Future<void>.delayed(const Duration(milliseconds: 250));
+              final readBack = await _systemControl.getVolume();
+              verified = readBack >= 0 && (readBack - level).abs() <= 5;
+            }
+            success = !result.startsWith('Error') && verified;
+            result = success
+                ? 'Volume set to $level% (verified by read-back).'
+                : 'Could not verify the volume change ($result).';
+            break;
+          }
 
         case 'set_brightness':
-          result = await _systemControl.setBrightness(
-            (action.params['level'] as num?)?.toInt() ?? 50,
-          );
-          // REAL VERIFICATION: Verify the brightness actually changed
-          success = !result.startsWith('Error');
-          break;
+          {
+            final level = (action.params['level'] as num?)?.toInt();
+            if (level == null || level < 0 || level > 100) {
+              result = 'Invalid brightness level (expected 0-100).';
+              success = false;
+              break;
+            }
+            result = await _systemControl.setBrightness(level);
+            // REAL VERIFICATION: same bounded read-back contract as volume.
+            var verified = false;
+            for (var attempt = 0; attempt < 4 && !verified; attempt++) {
+              await Future<void>.delayed(const Duration(milliseconds: 250));
+              final readBack = await _systemControl.getBrightness();
+              verified = readBack >= 0 && (readBack - level).abs() <= 5;
+            }
+            success = !result.startsWith('Error') && verified;
+            result = success
+                ? 'Brightness set to $level% (verified by read-back).'
+                : 'Could not verify the brightness change ($result).';
+            break;
+          }
 
         case 'run_adb_command':
           result = await _shizuku.runCommand(
@@ -211,6 +250,26 @@ class ActionHandler {
           success = backSuccess;
           result = success ? 'Pressed back' : 'Could not press back';
           break;
+
+        case 'press_home':
+          final homeSuccess = await _screenAutomation.pressHome();
+          success = homeSuccess;
+          result = success ? 'Pressed home' : 'Could not press home';
+          break;
+
+        case 'take_screenshot':
+          {
+            final shot = await _screenAutomation.takeScreenshot();
+            final hasImage = shot != null && shot.trim().isNotEmpty;
+            screenshotPayload = hasImage ? shot : null;
+            success = hasImage;
+            result = hasImage
+                ? 'Screenshot captured '
+                    '(${(shot!.length * 3 / 4 / 1024).toStringAsFixed(1)} KB).'
+                : 'Screenshot unavailable '
+                    '(requires Android 11+ and screen capture support).';
+            break;
+          }
 
         // ─── Multi-Step Task Execution ────────────────────────
 
@@ -356,6 +415,7 @@ class ActionHandler {
         actionType: action.action,
         success: success,
         details: result,
+        payloadBase64: screenshotPayload,
       );
     } catch (e) {
       return AgentActionResult(

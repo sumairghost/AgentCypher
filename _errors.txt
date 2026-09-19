@@ -1,0 +1,63 @@
+﻿error - Target of URI doesn't exist: 'screen_observation.dart' - lib\core\agent\agent_runtime.dart:11:8 - uri_does_not_exist
+error - The name 'ScreenObservation' isn't a type, so it can't be used as a type argument - lib\core\agent\agent_runtime.dart:189:10 - non_type_as_type_argument
+error - Missing concrete implementations of 'abstract interface class AgentRuntime.executeToolGroups' and 'abstract interface class AgentRuntime.observeScreen' - lib\core\agent\agent_runtime.dart:205:7 - non_abstract_class_inherits_abstract_member
+error - Undefined class 'ScreenObserver' - lib\core\agent\agent_runtime.dart:211:3 - undefined_class
+error - Undefined class 'AgentActionResult' - lib\core\agent\tool.dart:240:13 - undefined_class
+error - The getter 'category' isn't defined for the type 'CypherTool' - lib\core\agent\tool.dart:324:42 - undefined_getter
+error - The getter 'surfaceColor' isn't defined for the type 'GlassSpec' - lib\core\ui\cypher_components.dart:108:22 - undefined_getter
+error - The getter 'backdropFilterLight' isn't defined for the type 'GlassSpec' - lib\core\ui\cypher_components.dart:119:25 - undefined_getter
+error - Target of URI doesn't exist: 'typography_tokens.dart' - lib\screens\developer\dev_console_utils.dart:7:8 - uri_does_not_exist
+error - Target of URI doesn't exist: 'typography_tokens.dart' - lib\screens\developer\dev_console_utils.dart:8:8 - uri_does_not_exist
+error - Undefined name 'result' - lib\screens\developer\developer_console_home.dart:133:37 - undefined_identifier
+error - The named parameter 'readVolumeLevel' isn't defined - lib\screens\home_screen.dart:52:5 - undefined_named_parameter
+error - The getter 'systemControl' isn't defined for the type 'ActionHandler' - lib\screens\home_screen.dart:53:42 - undefined_getter
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:531:29 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:532:29 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:574:25 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:574:43 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:575:25 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:575:42 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:606:35 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:606:59 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:638:46 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:648:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:648:49 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:769:27 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:770:27 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:802:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:802:49 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:894:25 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:909:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:910:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:937:27 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:938:27 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:972:27 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:972:45 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1073:25 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1074:25 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1105:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1105:49 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1257:25 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1271:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1272:31 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1433:29 - undefined_identifier
+error - Undefined name 'c' - lib\screens\onboarding_screen.dart:1433:47 - undefined_identifier
+error - The getter 'shouldGiveFeedback' isn't defined for the type 'DeveloperTapProgress' - lib\screens\settings\about_page.dart:95:19 - undefined_getter
+error - The getter 'remaining' isn't defined for the type 'DeveloperTapProgress' - lib\screens\settings\about_page.dart:97:33 - undefined_getter
+error - The getter 'remaining' isn't defined for the type 'DeveloperTapProgress' - lib\screens\settings_screen.dart:57:36 - undefined_getter
+error - The name 'MemoryRecord' isn't a type, so it can't be used as a type argument - lib\screens\settings_screen.dart:98:8 - non_type_as_type_argument
+error - The method 'getAutomaticMemoryEnabled' isn't defined for the type 'UserMemoryService' - lib\screens\settings_screen.dart:176:50 - undefined_method
+error - The method 'getMemories' isn't defined for the type 'UserMemoryService' - lib\screens\settings_screen.dart:177:49 - undefined_method
+error - The method 'getSkills' isn't defined for the type 'SkillMemoryService' - lib\screens\settings_screen.dart:178:48 - undefined_method
+error - The method 'setAutomaticMemoryEnabled' isn't defined for the type 'UserMemoryService' - lib\screens\settings_screen.dart:193:30 - undefined_method
+error - Undefined class 'MemoryRecord' - lib\screens\settings_screen.dart:197:36 - undefined_class
+error - The method 'deleteMemory' isn't defined for the type 'UserMemoryService' - lib\screens\settings_screen.dart:198:30 - undefined_method
+error - The method 'deleteSkill' isn't defined for the type 'SkillMemoryService' - lib\screens\settings_screen.dart:203:31 - undefined_method
+error - The method 'clearAll' isn't defined for the type 'SkillMemoryService' - lib\screens\settings_screen.dart:229:31 - undefined_method
+error - The property 'value' can't be unconditionally accessed because the receiver can be 'null' - lib\screens\settings_screen.dart:1121:32 - unchecked_use_of_nullable_value
+error - The property 'category' can't be unconditionally accessed because the receiver can be 'null' - lib\screens\settings_screen.dart:1123:25 - unchecked_use_of_nullable_value
+error - The property 'reason' can't be unconditionally accessed because the receiver can be 'null' - lib\screens\settings_screen.dart:1123:70 - unchecked_use_of_nullable_value
+error - Invalid constant value - test\plan_execution_test.dart:61:29 - invalid_constant
+error - The named parameter 'stepResult' isn't defined - test\plan_execution_test.dart:234:45 - undefined_named_parameter
+error - Local variable 'executor' can't be referenced before it is declared - test\plan_execution_test.dart:404:11 - referenced_before_declaration
+error - The function 'isSubsetOf' isn't defined - test\task_fast_path_test.dart:83:23 - undefined_function
