@@ -50,6 +50,9 @@ void main() {
 
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Models & AI'), findsOneWidget);
+    // Hub entries below the default 600px test viewport live in a lazily-built ListView and are not built until scrolled into view.
+    await tester.scrollUntilVisible(find.text('About'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.text('About'), findsOneWidget);
     // Honest unavailability: no fake "Coming soon" for existing features.
     expect(find.textContaining('Coming soon'), findsNothing);
@@ -64,9 +67,12 @@ void main() {
     await tester.pumpWidget(_wrap(_page()));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('Developer'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.text('Developer'), findsOneWidget);
     await tester.tap(find.text('Developer'));
-    await tester.pumpAndSettle();
+    // The console embeds a continuously animating orb, so pumpAndSettle never completes; pump a fixed duration instead.
+    await tester.pump(const Duration(seconds: 1));
 
     // The real console dashboard is pushed, with its real sections.
     expect(find.text('Developer Console'), findsOneWidget);
@@ -83,6 +89,9 @@ void main() {
     await tester.tap(find.text('Appearance'));
     await tester.pumpAndSettle();
 
+    // 'Theme mode' sits below the fold in the appearance page.
+    await tester.scrollUntilVisible(find.text('Theme mode'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.text('Theme mode'), findsOneWidget);
   });
 }
