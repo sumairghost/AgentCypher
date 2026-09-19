@@ -21,6 +21,7 @@ import '../services/settings_service.dart';
 import '../services/diagnostics_service.dart';
 import '../services/controlled_upgrade_service.dart';
 import '../services/artifact_service.dart';
+import '../models/memory_record.dart';
 import '../services/user_memory_service.dart';
 import '../services/skill_memory_service.dart';
 import '../services/voice_service.dart';

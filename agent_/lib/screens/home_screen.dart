@@ -49,10 +49,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late final FastRouter _fastRouter = FastRouter(
     _toolRegistry,
     _actionHandler.appLauncher,
-    readVolumeLevel: () async {
-      final level = await _actionHandler.systemControl.getVolume();
-      return level < 0 ? null : level;
-    },
   );
 
   /// Single owner of agent-path execution: single-flight, bounded run

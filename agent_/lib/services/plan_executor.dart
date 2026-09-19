@@ -189,7 +189,7 @@ class PlanExecutor {
     for (final step in orderedSteps) {
       // Cancellation point: between every step.
       if (cancelled) {
-        results.addAll(_markRemaining(step, orderedSteps, results,
+        results.addAll(_markRemaining(orderedSteps, results,
             StepStatus.cancelled, 'Cancelled'));
         break;
       }
@@ -277,7 +277,12 @@ class PlanExecutor {
     num? previousDeviceValue;
 
     for (var attempt = 1; attempt <= attempts; attempt++) {
-      if (cancelled) {
+      // Cancellation is honored between retries. The first attempt always
+      // runs, because the step was already approved (plan preview / step
+      // confirmation) and the cancellation boundary for it is the loop guard
+      // in `execute()`, which marks every remaining step cancelled. An
+      // in-flight action is therefore never reported as cancelled.
+      if (attempt > 1 && cancelled) {
         return finish(StepStatus.cancelled, 'Cancelled.');
       }
 
@@ -591,8 +596,11 @@ class PlanExecutor {
     }
   }
 
+  /// Marks every not-yet-executed step, including the step current at the
+  /// cancellation point, as [status]. Excluding the current step previously
+  /// left it out of the results entirely, so a user cancellation produced a
+  /// partial result list that under-reported what was cancelled.
   Iterable<StepResult> _markRemaining(
-    PlanStep from,
     List<PlanStep> orderedSteps,
     List<StepResult> existing,
     StepStatus status,
@@ -600,7 +608,7 @@ class PlanExecutor {
   ) sync* {
     final handledIds = existing.map((r) => r.step.id).toSet();
     for (final step in orderedSteps) {
-      if (step.id == from.id || handledIds.contains(step.id)) continue;
+      if (handledIds.contains(step.id)) continue;
       yield StepResult(step: step, status: status, detail: detail);
     }
   }

@@ -8,14 +8,24 @@ import '../config/feature_flags.dart';
 /// Deterministic fast-path router. No LLM calls, no external APIs.
 /// Only recognized clear, safe, low-risk patterns.
 class TaskFastPathRouter {
+  // Dart's RegExp has no inline `(?i)` flag; case-insensitivity is set on the
+  // constructor instead. Using `(?i)` inline throws `FormatException:
+  // Invalid group`, which previously broke every pattern below at runtime.
+  // Handles both "Open YouTube and search for X" and the alternate
+  // "Search YouTube for X" phrasing without a lazy-dot scan, so the query is
+  // extracted deterministically.
   static final _youtubePattern = RegExp(
-    r'(?i)(?:open\s+youtube|search\s+youtube).*?(?:search\s+for|search)\s+(.+)',
+    r'(?:open\s+youtube|search\s+youtube)'
+    r'(?:\s+and\s+search(?:\s+for)?|\s+for)?\s+(.+)',
+    caseSensitive: false,
   );
   static final _volumePattern = RegExp(
-    r'(?i)set\s+volume\s+to\s*(\d+)\s*$',
+    r'set\s+volume\s+to\s*(\d+)\s*$',
+    caseSensitive: false,
   );
   static final _brightnessPattern = RegExp(
-    r'(?i)set\s+brightness\s+to\s*(\d+)\s*$',
+    r'set\s+brightness\s+to\s*(\d+)\s*$',
+    caseSensitive: false,
   );
 
   /// Try to match the user goal to a deterministic plan.
@@ -92,7 +102,8 @@ class TaskFastPathRouter {
   bool _isSensitiveOrUnsupported(String s) {
     // Messages, purchases, subscriptions, deletes, account, playback guarantees
     final bad = RegExp(
-      r'(?i)(message|send|subscribe|purchase|buy|delete|remove|install|download|login|signup|pay|subscribe|account|video\s+seek|seek\s+to|start\s+at|halfway|full.screen|fullscreen)',
+      r'(message|send|subscribe|purchase|buy|delete|remove|install|download|login|signup|pay|subscribe|account|video\s+seek|seek\s+to|start\s+at|halfway|full.screen|fullscreen)',
+      caseSensitive: false,
     );
     return bad.hasMatch(s);
   }

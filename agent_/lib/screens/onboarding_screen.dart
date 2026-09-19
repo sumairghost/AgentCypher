@@ -6,6 +6,7 @@ import 'dart:ui';
 import '../config/feature_flags.dart';
 import '../services/ai_service.dart';
 import '../services/screen_automation_service.dart';
+import '../core/theme/color_tokens.dart';
 import '../core/theme/cypher_theme.dart';
 import 'home_screen.dart';
 
@@ -44,6 +45,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   bool _obscureKey = true;
   bool _isValidating = false;
   String? _validationError;
+
+  /// Shorthand for the active color tokens, used by the builders below.
+  /// Builders that declare their own `final c = context.cypher.colors;`
+  /// shadow this getter and keep working unchanged.
+  CypherColorTokens get c => context.cypher.colors;
 
   @override
   void initState() {

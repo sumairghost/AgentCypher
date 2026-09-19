@@ -55,7 +55,7 @@ class FakeScreenService implements ScreenAutomationService {
           : interactionResults.removeAt(0);
 
   ScreenSnapshot _nextSnapshot(int index) => observedSnapshots.isEmpty
-      ? const ScreenSnapshot(
+      ? ScreenSnapshot(
           packageName: 'com.example.app',
           summary: 'SCREEN: element',
           fingerprint: 'fp-$index',
@@ -231,7 +231,7 @@ void main() {
   group('dependency gating', () {
     test('a step whose dependency fails is skipped, not executed', () async {
       final screen = FakeScreenService(interactionResults: [false]);
-      final verification = FakeVerification(stepResult: false);
+      final verification = FakeVerification()..stepResult = false;
       final executor = buildExecutor(screen: screen, verification: verification);
       final result = await executor.execute(planOf([
         const PlanStep(id: 's1', intent: 'tap search', action: 'click_text',
@@ -397,7 +397,8 @@ void main() {
     });
 
     test('cancel() stops between steps', () async {
-      final executor = buildExecutor(
+      late final PlanExecutor executor;
+      executor = buildExecutor(
         screen: FakeScreenService(),
         verification: FakeVerification(),
         onBeforeStep: (step) async {

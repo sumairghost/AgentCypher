@@ -130,7 +130,7 @@ class _DeveloperConsoleHomeState extends State<DeveloperConsoleHome>
           ? !connectivityResult.contains(ConnectivityResult.none)
           : connectivityResult != ConnectivityResult.none; // 5.x: single value
       _networkHealth = hasNetwork ? DevHealth.ok : DevHealth.warning;
-      _networkDetail = hasNetwork ? result.name : 'No connectivity';
+      _networkDetail = hasNetwork ? 'Network available' : 'No connectivity';
 
 
 

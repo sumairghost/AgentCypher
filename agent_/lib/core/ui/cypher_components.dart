@@ -99,7 +99,12 @@ class CypherGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.cypher;
-    final glass = spec ?? c.defaultGlassSpec;
+    // `surfaceColor`/`backdropFilterLight` live on the resolved glass tokens,
+    // so the spec is bound to the active mode before use.
+    final glass = CypherGlassTokens(
+      isDark: c.isDark,
+      spec: spec ?? c.defaultGlassSpec,
+    );
     final radius = borderRadius ?? BorderRadius.circular(CypherSpacing.radiusLg);
 
     Widget content = Container(

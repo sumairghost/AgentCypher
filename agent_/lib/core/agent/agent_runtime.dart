@@ -463,6 +463,50 @@ class CypherAgentRuntime implements AgentRuntime {
   }
 
   @override
+  Future<ScreenObservation?> observeScreen({
+    bool allowScreenshot = false,
+  }) async {
+    final automation = _screenAutomation;
+    if (automation == null) return null;
+    final observer = _screenObserver ??= ScreenObserver(automation);
+    return observer.observe(allowScreenshot: allowScreenshot);
+  }
+
+  @override
+  Future<List<ToolExecutionResult>> executeToolGroups(
+    List<List<ToolCall>> groups,
+  ) async {
+    final results = <ToolExecutionResult>[];
+    for (final group in groups) {
+      if (group.isEmpty) continue;
+      // A group runs concurrently only when every member is a pure read.
+      // Anything mutating/exclusive serializes its whole group, so Android UI
+      // automation can never receive conflicting simultaneous commands.
+      final parallelSafe = group.length > 1 &&
+          group.every(
+            (call) =>
+                _tools.lookup(call.toolId)?.toolAccess == ToolAccess.readOnly,
+          );
+      if (!parallelSafe) {
+        for (final call in group) {
+          results.add(await executeTool(call.toolId, call.arguments));
+        }
+        continue;
+      }
+      for (var i = 0; i < group.length; i += _maxParallelReads) {
+        final slice = group.skip(i).take(_maxParallelReads).toList();
+        final sliceResults = await Future.wait(
+          slice.map((call) => executeTool(call.toolId, call.arguments)),
+        );
+        results.addAll(sliceResults);
+      }
+    }
+    // Input order is preserved regardless of completion order, so parallel
+    // scheduling can never change a call's semantic position.
+    return results;
+  }
+
+  @override
   Future<AgentSessionSnapshot?> getSession(String sessionId) async {
     try {
       final sessions = await ChatHistoryService.loadSessions();

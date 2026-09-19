@@ -296,11 +296,23 @@ class _CypherVoiceOrbState extends State<CypherVoiceOrb>
   @override
   void initState() {
     super.initState();
-    _reduced = MediaQuery.disableAnimationsOf(context);
+    // MediaQuery must not be read in initState: inherited widgets are not
+    // resolvable yet, so Flutter asserts and the value would never update on
+    // change. The reduced-motion flag is therefore resolved in
+    // didChangeDependencies, with a safe default here.
+    _reduced = false;
     _attachController();
     if (!widget.paused) {
       _ticker = createTicker(_onTick)..start();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Correct place for inherited-widget access, and it re-runs whenever the
+    // accessibility setting changes.
+    _reduced = MediaQuery.disableAnimationsOf(context);
   }
 
   @override

@@ -54,6 +54,7 @@ class DeveloperTapActivator {
           activated: false,
           rejected: true,
           reset: false,
+          requiredTaps: requiredTaps,
         );
       }
       // Inactivity timeout: a fresh sequence starts.
@@ -67,6 +68,7 @@ class DeveloperTapActivator {
       activated: _count >= requiredTaps,
       rejected: false,
       reset: false,
+      requiredTaps: requiredTaps,
     );
   }
 }
@@ -81,12 +83,25 @@ class DeveloperTapProgress {
   /// tap was counted.
   final bool reset;
 
+  /// Taps required to activate, as configured on the activator that produced
+  /// this result. Carried here so callers can render "N steps away" without
+  /// duplicating the activator's rules.
+  final int requiredTaps;
+
   const DeveloperTapProgress({
     required this.count,
     required this.activated,
     required this.rejected,
     required this.reset,
+    this.requiredTaps = 7,
   });
+
+  /// Taps still needed for activation (0 once activated).
+  int get remaining => count >= requiredTaps ? 0 : requiredTaps - count;
+
+  /// Whether "you are N steps away" feedback should be shown for this count
+  /// (from the third tap on, matching Android's behavior).
+  bool get shouldGiveFeedback => count >= 3 && count < requiredTaps;
 }
 
 /// Persistence for developer-only configuration.

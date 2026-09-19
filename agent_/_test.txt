@@ -1,0 +1,363 @@
+﻿00:00 +0: loading C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart
+00:00 +0: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: recognizes only the NVIDIA hosted API URL
+00:00 +1: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: NVIDIA model picker keeps only verified free chat models
+00:00 +2: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: Nemotron is the default NVIDIA model
+00:00 +3: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: normalizes bearer tokens without exposing or changing their value
+00:00 +4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: NVIDIA headers use bearer auth and omit unrelated referral headers
+00:00 +5: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: non-NVIDIA headers preserve existing compatibility metadata
+00:00 +6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: compact screen state keeps browser fields readable
+00:00 +7: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/ai_service_test.dart: recovery engine recommends human intervention for CAPTCHA blocks
+00:00 +8: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/capability_registry_test.dart: CapabilityRegistry instagramCreatePost is irreversibleExternal with fresh confirmation
+00:00 +9: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/capability_registry_test.dart: CapabilityRegistry youtubeSearch is reversible without fresh confirmation
+00:00 +10: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/capability_registry_test.dart: CapabilityRegistry isExternalPublishingIntent detects post + instagram
+00:00 +11: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/capability_registry_test.dart: CapabilityRegistry isExternalPublishingIntent rejects unrelated
+00:00 +12: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/capability_registry_test.dart: CapabilityRegistry byId returns null for unknown
+00:01 +13: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.requiresFreshConfirmation post/share/send require fresh confirmation
+00:01 +14: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.requiresFreshConfirmation safe action does not require fresh confirmation
+00:01 +15: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.invalidateIfStale user cancelled invalidates immediately
+00:01 +16: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.invalidateIfStale content edited invalidates
+00:01 +17: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.invalidateIfStale screen changed invalidates
+00:01 +18: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.invalidateIfStale age over confirmationMaxAge invalidates
+00:01 +19: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: ConfirmationPolicy.invalidateIfStale identical state within window returns null
+00:01 +20: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: confirmationMaxAge is 60s
+00:01 +21: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/confirmation_policy_test.dart: buildFinalPrompt includes media, caption, account
+00:02 +22: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_config_service_test.dart: CypherDeveloperConfig persistence developer mode flag persists and notifies
+00:02 +23: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_config_service_test.dart: CypherDeveloperConfig persistence orb profiles round-trip: save, duplicate, restore, delete
+00:02 +24: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_config_service_test.dart: CypherDeveloperConfig persistence orb lab config persists and can be cleared
+00:02 +25: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_config_service_test.dart: CypherDeveloperConfig persistence code agent sessions persist with bounded history
+00:02 +26: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_config_service_test.dart: CypherDeveloperConfig persistence resetDeveloperConfiguration clears only developer state
+00:02 +27: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_tap_activator_test.dart: DeveloperTapActivator ΓÇö seven-tap developer mode activates on the seventh rapid tap
+00:02 +28: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_tap_activator_test.dart: DeveloperTapActivator ΓÇö seven-tap developer mode inactivity gap longer than maxTapGap resets the counter
+00:02 +29: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_tap_activator_test.dart: DeveloperTapActivator ΓÇö seven-tap developer mode taps faster than minTapGap are debounced (rejected)
+00:02 +30: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_tap_activator_test.dart: DeveloperTapActivator ΓÇö seven-tap developer mode remaining and feedback thresholds behave like Android
+00:02 +31: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/developer_tap_activator_test.dart: DeveloperTapActivator ΓÇö seven-tap developer mode counter cannot accidentally activate from slow sparse taps
+00:03 +32: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbConfig standard config equals the default constructor
+00:03 +33: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbConfig copyWith overrides and clears energy values
+00:03 +34: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbConfig JSON round-trip preserves values
+00:03 +35: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbConfig fromJson clamps out-of-range values instead of crashing
+00:03 +36: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbConfig fromJson ignores wrong types and falls back to defaults
+00:03 +37: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbProfile JSON round-trip preserves identity and config
+00:03 +38: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbProfile renamed and withConfig keep identity but refresh timestamp
+00:03 +39: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/orb_config_test.dart: CypherOrbController calls are safe no-ops when no orb is attached
+00:04 +40: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility renders with semantic label
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _ElementPredicateWidgetFinder:<Found 0 widgets with element matching predicate: []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart:22:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart line 22
+The test description was:
+  renders with semantic label
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:05 +40 -1: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility renders with semantic label [E]
+  Test failed. See exception logs above.
+  The test description was: renders with semantic label
+  
+00:05 +40 -1: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility static when reduced-motion enabled
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 2 widgets with type "CustomPaint": [
+            CustomPaint(renderObject: RenderCustomPaint#5f7ff),
+            CustomPaint(renderObject: RenderCustomPaint#82a9c),
+          ]>
+   Which: is too many
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart:36:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart line 36
+The test description was:
+  static when reduced-motion enabled
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:05 +40 -2: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility static when reduced-motion enabled [E]
+  Test failed. See exception logs above.
+  The test description was: static when reduced-motion enabled
+  
+00:05 +40 -2: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility every phase maps to a valid orb state
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 2 widgets with type "CustomPaint": [
+            CustomPaint(renderObject: RenderCustomPaint#54507),
+            CustomPaint(renderObject: RenderCustomPaint#76cae),
+          ]>
+   Which: is too many
+phase AssistantOverlayPhase.idle failed to render the orb
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart:51:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart line 51
+The test description was:
+  every phase maps to a valid orb state
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:05 +40 -3: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility every phase maps to a valid orb state [E]
+  Test failed. See exception logs above.
+  The test description was: every phase maps to a valid orb state
+  
+00:05 +40 -3: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility listening phase maps to CypherVoiceOrbState.listening
+00:05 +41 -3: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility error phase surfaces an error-tinted, labelled orb
+00:05 +42 -3: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility audioLevel is plumbed through to the orb
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 2 widgets with type "CustomPaint": [
+            CustomPaint(renderObject: RenderCustomPaint#bbeaf),
+            CustomPaint(renderObject: RenderCustomPaint#0b7a5),
+          ]>
+   Which: is too many
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart:99:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart line 99
+The test description was:
+  audioLevel is plumbed through to the orb
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:05 +42 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_assistant_orb_test.dart: AssistantOrb - visual / accessibility audioLevel is plumbed through to the orb [E]
+  Test failed. See exception logs above.
+  The test description was: audioLevel is plumbed through to the orb
+  
+00:06 +42 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract idle -> thinking -> executing -> success is valid progression
+00:06 +43 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract cancellation: thinking|executing -> idle is valid
+00:06 +44 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract awaitingApproval signals a hand-off to main app
+00:06 +45 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract error is a terminal state
+00:06 +46 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract success is a terminal state
+00:06 +47 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract listening is non-terminal (can return to idle)
+00:06 +48 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Phase transition contract expanded is non-terminal (user can collapse)
+00:06 +49 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Duplicate-prevention contract second request blocked when one is active
+00:06 +50 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Duplicate-prevention contract after completion, executor cleared and isSent reset
+00:06 +51 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Sensitive-plan handoff preview-required results route to awaitingApproval phase
+00:06 +52 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Sensitive-plan handoff normal completion is not approval-pending
+00:06 +53 -4: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Orb ΓÇö accessibility and reduced motion reduced motion uses static painter
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TypeWidgetFinder:<Found 2 widgets with type "CustomPaint": [
+            CustomPaint(renderObject: RenderCustomPaint#79575),
+            CustomPaint(renderObject: RenderCustomPaint#dce4d),
+          ]>
+   Which: is too many
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart:107:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart line 107
+The test description was:
+  reduced motion uses static painter
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:07 +53 -5: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Orb ΓÇö accessibility and reduced motion reduced motion uses static painter [E]
+  Test failed. See exception logs above.
+  The test description was: reduced motion uses static painter
+  
+00:07 +53 -5: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Orb ΓÇö accessibility and reduced motion orb has semantic label
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _ElementPredicateWidgetFinder:<Found 0 widgets with element matching predicate: []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart:123:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart line 123
+The test description was:
+  orb has semantic label
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:07 +53 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Orb ΓÇö accessibility and reduced motion orb has semantic label [E]
+  Test failed. See exception logs above.
+  The test description was: orb has semantic label
+  
+00:07 +53 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_lifecycle_test.dart: Orb ΓÇö disposal orb disposes without throwing
+00:07 +54 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming all phases have human-readable name
+00:08 +55 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming idle maps to ready
+00:08 +56 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming listening maps to Listening
+00:08 +57 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming thinking maps to Thinking
+00:08 +58 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming executing maps to Acting
+00:08 +59 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming success maps to Done
+00:08 +60 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: AssistantOverlayPhase ΓÇö state naming error maps to Error
+00:08 +61 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Phase status text thinking has descriptive status text
+00:08 +62 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Phase status text executing has descriptive status text
+00:08 +63 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Phase status text other phases return empty string
+00:08 +64 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Phase transition guard executing and thinking are cancellable
+00:08 +65 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Phase transition guard idle, success, error are not cancellable
+00:08 +66 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Task routing ΓÇö fast-path vs planner YouTube search routes to fast-path
+00:08 +67 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Task routing ΓÇö fast-path vs planner volume control routes to fast-path
+00:08 +68 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Task routing ΓÇö fast-path vs planner generic task routes to planner
+00:08 +69 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Task routing ΓÇö fast-path vs planner messaging intent is not fast-path-eligible
+00:08 +70 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/overlay_main_test.dart: Task routing ΓÇö fast-path vs planner empty input is handled
+00:09 +71 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: dependency gating a step whose dependency fails is skipped, not executed
+00:10 +72 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: successful chain verifies every step
+00:10 +73 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: failure handling unsupported capability is refused honestly without retrying
+00:10 +74 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: failure handling transient target failure succeeds on retry (bounded)
+00:10 +75 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: failure handling transient target failure succeeds on retry (bounded)
+00:10 +76 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: failure handling wrong-app context reopens the required app before acting
+00:10 +77 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: reversible settings set_volume verifies by read-back and records the previous value
+00:10 +78 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: reversible settings set_brightness verifies by read-back
+00:10 +79 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: cancellation and approval declining a sensitive step cancels that step but keeps the rest
+00:10 +80 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: cancellation and approval cancel() stops between steps
+00:10 +81 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/plan_execution_test.dart: performance mocked multi-step task completes well under a wall-clock budget with a bounded number of dumps
+00:11 +82 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/screen_automation_service_test.dart: formats semantic nodes with task relevance and bounds
+00:13 +83 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +84 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +85 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +86 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +87 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +88 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +89 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +90 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +91 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +92 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +93 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +94 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:13 +95 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:14 +96 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:14 +97 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +98 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +99 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +100 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +101 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +102 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +103 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +104 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +105 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +106 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +107 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +108 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+00:15 +109 -6: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "About": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart:53:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart line 53
+The test description was:
+  settings hub shows real categories and hides Developer when developer mode is off
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:15 +109 -7: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: settings hub shows real categories and hides Developer when developer mode is off [E]
+  Test failed. See exception logs above.
+  The test description was: settings hub shows real categories and hides Developer when developer mode is off
+  
+00:15 +109 -7: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: Developer tile appears and navigates to the console when developer mode is enabled
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Developer": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart:67:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart line 67
+The test description was:
+  Developer tile appears and navigates to the console when developer mode is enabled
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:15 +109 -8: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: Developer tile appears and navigates to the console when developer mode is enabled [E]
+  Test failed. See exception logs above.
+  The test description was: Developer tile appears and navigates to the console when developer mode is enabled
+  
+00:15 +109 -8: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: Appearance tile navigates to the real appearance page
+00:16 +110 -8: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: Appearance tile navigates to the real appearance page
+00:16 +111 -8: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: Appearance tile navigates to the real appearance page
+ΓòÉΓòÉΓòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Γò₧ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Theme mode": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart:86:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart line 86
+The test description was:
+  Appearance tile navigates to the real appearance page
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+00:17 +111 -9: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/settings_navigation_test.dart: Appearance tile navigates to the real appearance page [E]
+  Test failed. See exception logs above.
+  The test description was: Appearance tile navigates to the real appearance page
+  
+00:17 +111 -9: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/verification_test.dart: ScreenSnapshot verification accepts a readable state transition
+00:17 +112 -9: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/verification_test.dart: ScreenSnapshot verification rejects an unreadable before or after state
+00:17 +113 -9: C:/Users/Hp/Downloads/AgentCypher_latest_complete_project/agent_/test/verification_test.dart: ScreenSnapshot verification rejects identical readable states
+00:17 +114 -9: Some tests failed.

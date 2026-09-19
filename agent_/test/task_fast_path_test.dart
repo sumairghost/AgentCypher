@@ -80,7 +80,11 @@ void main() {
       final router = TaskFastPathRouter();
       final route = router.tryRoute('Open YouTube and search for cars');
       final actions = route.plan!.steps.map((s) => s.action).toSet();
-      expect(actions, isSubsetOf({'open_app', 'click_text', 'type_text', 'press_enter'}));
+      expect(
+        {'open_app', 'click_text', 'type_text', 'press_enter'}
+            .containsAll(actions),
+        isTrue,
+      );
     });
 
     test('dependency chain gates later steps', () {

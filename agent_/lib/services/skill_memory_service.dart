@@ -116,4 +116,26 @@ class SkillMemoryService {
       await _saveAllSkills();
     }
   }
+
+  /// Read-only view of every learned skill (Phase 13/14 discovery surface).
+  Future<List<SavedSkill>> getSkills() async {
+    await _loadSkills();
+    return List.unmodifiable(_skills);
+  }
+
+  /// Removes one learned skill by id.
+  Future<void> deleteSkill(String skillId) async {
+    await _loadSkills();
+    final before = _skills.length;
+    _skills.removeWhere((s) => s.id == skillId);
+    if (_skills.length != before) await _saveAllSkills();
+  }
+
+  /// Removes every learned skill; used by the explicit "clear all memory"
+  /// action alongside [UserMemoryService.clearAll].
+  Future<void> clearAll() async {
+    _skills = [];
+    _isLoaded = true;
+    await _saveAllSkills();
+  }
 }

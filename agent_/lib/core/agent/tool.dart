@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../models/agent_action.dart';
+import '../../models/chat_message.dart';
 import '../../models/task_plan.dart';
 import '../../services/action_handler.dart';
 import '../../services/ai_service.dart';
@@ -134,6 +135,9 @@ abstract interface class CypherTool {
 
   /// One-line honest description of the effect.
   String get description;
+
+  /// Coarse grouping used by discovery surfaces; see [ToolCategory].
+  ToolCategory get category;
 
   /// Parameter names → coarse type tags ('string', 'int', ...). Same
   /// convention as `CapabilityEntry.inputSchema`; an open map means "no
