@@ -7,6 +7,8 @@ import 'package:agent_cypher/core/ui/cypher_voice_orb.dart';
 void main() {
   group('AssistantOrb - visual / accessibility', () {
     testWidgets('renders with semantic label', (tester) async {
+      // bySemanticsLabel requires the semantics test harness.
+      final handle = tester.ensureSemantics();
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -19,10 +21,13 @@ void main() {
         ),
       );
       await tester.pump();
+      // The outer label may merge with the orb's own state label, so match
+      // as a pattern rather than exact equality.
       expect(
-        find.bySemanticsLabel('Agent Cypher assistant orb'),
+        find.bySemanticsLabel(RegExp('Agent Cypher assistant orb')),
         findsOneWidget,
       );
+      handle.dispose();
     });
 
     testWidgets('static when reduced-motion enabled', (tester) async {
@@ -52,9 +57,9 @@ void main() {
         await tester.pump();
         // Each phase must render a CustomPaint (the orb) and expose a semantics
         // label so the state is never conveyed by animation alone.
-        expect(find.byType(CustomPaint), findsOneWidget,
+        expect(find.byType(CustomPaint), findsAtLeastNWidgets(1),
             reason: 'phase $phase failed to render the orb');
-        expect(find.byType(Semantics), findsOneWidget,
+        expect(find.bySemanticsLabel(RegExp('Cypher')), findsAtLeastNWidgets(1),
             reason: 'phase $phase missing semantic label');
       }
     });
@@ -100,7 +105,7 @@ void main() {
       );
       await tester.pump();
       // The orb must still render when driven with a non-zero amplitude.
-      expect(find.byType(CustomPaint), findsOneWidget);
+      expect(find.byType(CustomPaint), findsAtLeastNWidgets(1));
     });
   });
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_cypher/core/theme/color_tokens.dart';
 import 'package:agent_cypher/core/theme/cypher_theme.dart';
+import 'package:agent_cypher/screens/developer/developer_console_home.dart';
+import 'package:agent_cypher/screens/settings/appearance_settings.dart';
 import 'package:agent_cypher/screens/settings/settings_main.dart';
 import 'package:agent_cypher/services/ai_service.dart';
 import 'package:agent_cypher/services/developer_config_service.dart';
@@ -67,17 +69,39 @@ void main() {
     await tester.pumpWidget(_wrap(_page()));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Developer'), 200, scrollable: find.byType(Scrollable).first);
+    final hubList = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('Developer'), 200, scrollable: hubList);
+    await tester.pumpAndSettle();
+    // The Developer tile is the last entry: a tile that is only partly inside
+    // the viewport cannot receive the tap, so scroll to the end of the list.
+    await tester.drag(hubList, const Offset(0, -260));
     await tester.pumpAndSettle();
     expect(find.text('Developer'), findsOneWidget);
+    await tester.ensureVisible(find.text('Developer'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Developer'));
+    await tester.pump();
     // The console embeds a continuously animating orb, so pumpAndSettle never completes; pump a fixed duration instead.
     await tester.pump(const Duration(seconds: 1));
 
     // The real console dashboard is pushed, with its real sections.
+    expect(find.byType(DeveloperConsoleHome), findsOneWidget);
     expect(find.text('Developer Console'), findsOneWidget);
-    expect(find.text('System'), findsOneWidget);
-    expect(find.text('Quick actions'), findsOneWidget);
+    expect(find.text('SYSTEM'), findsOneWidget);
+    // 'Quick actions' is the console's last section; scroll the console's own list (DevSection titles render uppercase).
+    final consoleScrollable = find
+        .descendant(
+          of: find.byType(DeveloperConsoleHome),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('QUICK ACTIONS'),
+      200,
+      scrollable: consoleScrollable,
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('QUICK ACTIONS'), findsOneWidget);
   });
 
   testWidgets('Appearance tile navigates to the real appearance page',
@@ -90,8 +114,20 @@ void main() {
     await tester.pumpAndSettle();
 
     // 'Theme mode' sits below the fold in the appearance page.
-    await tester.scrollUntilVisible(find.text('Theme mode'), 200, scrollable: find.byType(Scrollable).first);
+    // Section headers render uppercase via CypherSectionHeader, and the pushed page's own scrollable must be used (the hub's sits behind it).
+    final appearanceScrollable = find
+        .descendant(
+          of: find.byType(AppearanceSettingsPage),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('THEME MODE'),
+      200,
+      scrollable: appearanceScrollable,
+    );
     await tester.pumpAndSettle();
-    expect(find.text('Theme mode'), findsOneWidget);
+    expect(find.byType(AppearanceSettingsPage), findsOneWidget);
+    expect(find.text('THEME MODE'), findsOneWidget);
   });
 }
