@@ -1,0 +1,4 @@
+# JVM heap dumps and HotSpot crash artifacts (e.g. gradle daemon OOM dumps)
+*.hprof
+hs_err_pid*
+replay_pid*
