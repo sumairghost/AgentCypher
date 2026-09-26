@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal manifest for the embedded OpenClaw (4AIs) library module.
+
+  All Android components (GatewayService, PhoneAccessibilityService, BootReceiver,
+  providers) are declared in the HOST app manifest (../app/src/main/AndroidManifest.xml)
+  with fully-qualified class names so they resolve to the merged single APK
+  (applicationId com.cypherghost.agentcypher). The library keeps only its own
+  resources, assets, aidl and jniLibs.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

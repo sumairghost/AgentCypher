@@ -28,7 +28,7 @@ class CypherOrbConfig {
   /// Internal color-flow frequency multiplier (0..3, default 1).
   final double fluidSpeed;
 
-  /// 0..1 â€” softness dampens high-order harmonics for a smoother silhouette
+  /// 0..1 — softness dampens high-order harmonics for a smoother silhouette
   /// (0 = crisp multi-harmonic jelly, 1 = calm near-circular blob).
   final double jellySoftness;
 

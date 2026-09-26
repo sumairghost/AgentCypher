@@ -12,7 +12,7 @@ import '../../core/ui/orb_config.dart';
 import '../../services/developer_config_service.dart';
 
 /// Orb Lab (Phase 5): interactive development tool for the REAL procedural
-/// orb. This page never re-implements rendering â€” it drives the same
+/// orb. This page never re-implements rendering — it drives the same
 /// [CypherVoiceOrb] the app uses through [CypherOrbConfig] and
 /// [CypherOrbController]. Configurations persist as developer-only profiles
 /// (Phase 6) via [CypherDeveloperConfig].
@@ -226,7 +226,7 @@ extension _OrbLabBuildSection on _OrbLabPageState {
               CypherSectionHeader(
                 title: 'Material & motion',
                 subtitle:
-                    'Live multipliers over the real renderer â€” no duplicated '
+                    'Live multipliers over the real renderer — no duplicated '
                     'painter exists.',
               ),
               _MultiplierSliders(config: _config, onChanged: _updateConfig),

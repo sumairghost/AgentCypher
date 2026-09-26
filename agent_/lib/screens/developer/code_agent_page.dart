@@ -1,19 +1,20 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 import '../../core/theme/cypher_theme.dart';
 import '../../core/theme/spacing_tokens.dart';
 import '../../core/ui/cypher_components.dart';
 import '../../services/developer_config_service.dart';
+import '../../services/workspace_agent_service.dart';
 
-/// Code Agent workflow (Phase 7).
+/// Developer Mode — the real code-editing workflow.
 ///
-/// HONEST SCOPE: this app cannot modify its own source or rebuild itself.
-/// The page structures the development workflow — request, analysis, proposed
-/// patch, explicit approval, application through the AUTHORIZED DEVELOPMENT
-/// ENVIRONMENT (the developer's machine), and validation results — and
-/// persists each session. It never writes source files and never reports a
-/// change as applied unless the developer explicitly attests it.
+/// The user sees ONE request box and ONE confirmation. Everything else —
+/// repository discovery, file selection, planning, editing, and validation —
+/// is the workspace bridge's job (see [WorkspaceAgentService]). The app never
+/// asks for paths and never fakes an edit: when the bridge is not connected
+/// this page shows a clean unavailable state instead.
 class CodeAgentPage extends StatefulWidget {
   const CodeAgentPage({super.key});
 
@@ -21,354 +22,285 @@ class CodeAgentPage extends StatefulWidget {
   State<CodeAgentPage> createState() => _CodeAgentPageState();
 }
 
-class _CodeAgentPageState extends State<CodeAgentPage> {
-  final TextEditingController _request = TextEditingController();
-  final TextEditingController _affectedFiles = TextEditingController();
-  final TextEditingController _reason = TextEditingController();
-  final TextEditingController _summary = TextEditingController();
-  final TextEditingController _diff = TextEditingController();
-  final TextEditingController _checkpoint = TextEditingController();
-  final TextEditingController _revertNote = TextEditingController();
+enum _DevPhase { checking, unavailable, idle, analyzing, editing, done, failed }
 
-  String _risk = 'medium';
-  bool _approved = false;
-  bool _appliedViaEnvironment = false;
-  String _validationAnalyzer = 'not tested';
-  String _validationTests = 'not tested';
-  String _validationBuild = 'not tested';
-  String _result = 'unverified';
-  String? _editingSessionId;
+class _CodeAgentPageState extends State<CodeAgentPage> {
+  final WorkspaceAgentService _agent = WorkspaceAgentService();
+  final TextEditingController _request = TextEditingController();
+
+  _DevPhase _phase = _DevPhase.checking;
+  String? _unavailableReason;
+  String? _error;
+  WorkspaceRunReport? _report;
+  String? _lastRequest;
 
   @override
   void initState() {
     super.initState();
     developerConfig.ensureInitialized();
+    _checkWorkspace();
   }
 
   @override
   void dispose() {
-    for (final controller in [
-      _request, _affectedFiles, _reason, _summary, _diff, _checkpoint,
-      _revertNote,
-    ]) {
-      controller.dispose();
-    }
+    _request.dispose();
     super.dispose();
   }
 
-  Map<String, dynamic> _sessionMap() {
-    return {
-      'id': _editingSessionId ??
-          'code_${DateTime.now().millisecondsSinceEpoch}',
-      'request': _request.text,
-      'affectedFiles': _affectedFiles.text,
-      'reason': _reason.text,
-      'risk': _risk,
-      'proposedChange': _summary.text,
-      'diff': _diff.text,
-      'approved': _approved,
-      'appliedViaEnvironment': _appliedViaEnvironment,
-      'validationAnalyzer': _validationAnalyzer,
-      'validationTests': _validationTests,
-      'validationBuild': _validationBuild,
-      'result': _result,
-      'checkpoint': _checkpoint.text,
-      'revertNote': _revertNote.text,
-      'updatedAt': DateTime.now().toIso8601String(),
-    };
-  }
-
-  void _loadSession(Map<String, dynamic> session) {
+  Future<void> _checkWorkspace() async {
     setState(() {
-      _editingSessionId = session['id'] as String?;
-      _request.text = session['request'] as String? ?? '';
-      _affectedFiles.text = session['affectedFiles'] as String? ?? '';
-      _reason.text = session['reason'] as String? ?? '';
-      _summary.text = session['proposedChange'] as String? ?? '';
-      _diff.text = session['diff'] as String? ?? '';
-      _checkpoint.text = session['checkpoint'] as String? ?? '';
-      _revertNote.text = session['revertNote'] as String? ?? '';
-      _risk = session['risk'] as String? ?? 'medium';
-      _approved = session['approved'] as bool? ?? false;
-      _appliedViaEnvironment =
-          session['appliedViaEnvironment'] as bool? ?? false;
-      _validationAnalyzer =
-          session['validationAnalyzer'] as String? ?? 'not tested';
-      _validationTests = session['validationTests'] as String? ?? 'not tested';
-      _validationBuild = session['validationBuild'] as String? ?? 'not tested';
-      _result = session['result'] as String? ?? 'unverified';
+      _phase = _DevPhase.checking;
+      _error = null;
+      _report = null;
+    });
+    final reason = await _agent.probeUnavailableReason();
+    if (!mounted) return;
+    setState(() {
+      _unavailableReason = reason;
+      _phase = reason == null ? _DevPhase.idle : _DevPhase.unavailable;
     });
   }
 
-  Future<void> _saveSession() async {
-    if (_request.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Describe the developer request first')),
-      );
+  Future<void> _execute() async {
+    final request = _request.text.trim();
+    if (request.isEmpty) return;
+
+    setState(() {
+      _phase = _DevPhase.analyzing;
+      _error = null;
+      _report = null;
+      _lastRequest = request;
+    });
+
+    final WorkspacePlan plan;
+    try {
+      plan = await _agent.plan(request);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _phase = _DevPhase.failed;
+        _error = error.toString();
+      });
       return;
     }
-    await developerConfig.saveCodeAgentSession(_sessionMap());
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Session saved (developer-only storage)')),
-    );
+
+    // THE single confirmation for the whole change.
+    final approved = await _confirmPlan(plan);
+    if (!mounted) return;
+    if (!approved) {
+      unawaited(_agent.cancel(plan.id));
+      setState(() => _phase = _DevPhase.idle);
+      return;
+    }
+
+    setState(() => _phase = _DevPhase.editing);
+    try {
+      final report = await _agent.apply(plan.id);
+      if (!mounted) return;
+      setState(() {
+        _report = report;
+        _phase = report.ok ? _DevPhase.done : _DevPhase.failed;
+        if (!report.ok) _error = report.error;
+      });
+      unawaited(developerConfig.saveCodeAgentSession(<String, dynamic>{
+        'id': plan.id,
+        'request': request,
+        'summary': plan.summary,
+        'files': plan.files.map((f) => f.path).join('\n'),
+        'result': report.ok ? 'success' : 'failed',
+        'report': report.report,
+        'validation': <String, String>{
+          'analyzer': report.validation.analyzer,
+          'tests': report.validation.tests,
+          'format': report.validation.format,
+        },
+        'updatedAt': DateTime.now().toIso8601String(),
+      }));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _phase = _DevPhase.failed;
+        _error = error.toString();
+      });
+    }
   }
 
-  void _newSession() {
-    setState(() {
-      _editingSessionId = null;
-      _request.clear();
-      _affectedFiles.clear();
-      _reason.clear();
-      _summary.clear();
-      _diff.clear();
-      _checkpoint.clear();
-      _revertNote.clear();
-      _risk = 'medium';
-      _approved = false;
-      _appliedViaEnvironment = false;
-      _validationAnalyzer = 'not tested';
-      _validationTests = 'not tested';
-      _validationBuild = 'not tested';
-      _result = 'unverified';
-    });
+  Future<bool> _confirmPlan(WorkspacePlan plan) async {
+    final c = context.cypher;
+    final approved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Apply this change?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              plan.summary.isEmpty
+                  ? 'The workspace agent will inspect and edit the project.'
+                  : plan.summary,
+              style: c.typography.bodyMedium,
+            ),
+            if (plan.files.isNotEmpty) ...[
+              const SizedBox(height: CypherSpacing.space3),
+              Text(
+                'Files:',
+                style: c.typography.labelMedium.copyWith(
+                  color: c.colors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: CypherSpacing.space1),
+              for (final file in plan.files.take(8))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: CypherSpacing.space1),
+                  child: Text(
+                    '• ${file.path}',
+                    style: c.typography.bodySmall.copyWith(
+                      fontFamily: 'JetBrainsMono',
+                      color: c.colors.textSecondary,
+                    ),
+                  ),
+                ),
+              if (plan.files.length > 8)
+                Text(
+                  '+ ${plan.files.length - 8} more',
+                  style: c.typography.bodySmall
+                      .copyWith(color: c.colors.textTertiary),
+                ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    return approved == true;
   }
 
   @override
-  Widget build(BuildContext context) => _codeAgentBuild(context);
-}
-
-extension _CodeAgentBuildSection on _CodeAgentPageState {
-  Widget _codeAgentBuild(BuildContext context) {
+  Widget build(BuildContext context) {
     final c = context.cypher;
+    final phase = _phase;
+    final busy = phase == _DevPhase.analyzing || phase == _DevPhase.editing;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        scrolledUnderElevation: 0,
+        foregroundColor: c.colors.textPrimary,
+        elevation: 0,
         title: Text('Code Agent', style: c.typography.titleMedium),
         actions: [
           IconButton(
-            tooltip: 'New session',
-            icon: const Icon(Icons.note_add_outlined),
-            onPressed: _newSession,
+            tooltip: 'Recheck workspace bridge',
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: busy ? null : _checkWorkspace,
           ),
         ],
       ),
       body: CypherBackground(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(CypherSpacing.space6),
+        child: phase == _DevPhase.checking
+            ? const Center(child: CircularProgressIndicator())
+            : phase == _DevPhase.unavailable
+                ? _UnavailableView(
+                    reason: _unavailableReason ?? '',
+                    onRetry: _checkWorkspace,
+                  )
+                : _IdleView(
+                    controller: _request,
+                    phase: phase,
+                    lastRequest: _lastRequest,
+                    error: _error,
+                    report: _report,
+                    onExecute: _execute,
+                  ),
+      ),
+    );
+  }
+}
+
+/// Honest empty state when the workspace bridge cannot be reached. The page
+/// refuses to pretend; it tells the user exactly what to run instead.
+class _UnavailableView extends StatelessWidget {
+  const _UnavailableView({required this.reason, required this.onRetry});
+
+  final String reason;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cypher;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(CypherSpacing.space6),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CypherCard(
-                color: c.colors.surface.withOpacity(0.4),
-                padding: const EdgeInsets.all(CypherSpacing.space4),
-                child: Text(
-                  'This workflow never modifies source files from the app. '
-                  'Changes are applied through your authorized development '
-                  'environment after explicit approval, then validated '
-                  '(analyzer, tests, build) and recorded honestly.',
-                  style: c.typography.bodySmall,
-                ),
-              ),
-              CypherSectionHeader(
-                title: 'Request',
-                subtitle: 'What should change, and why.',
-              ),
-              CypherInput(
-                controller: _request,
-                label: 'Developer request',
-                hint: 'Describe the change for the development environment…',
-                maxLines: 4,
-                minLines: 3,
-              ),
-              CypherSectionHeader(
-                title: 'Analysis',
-                subtitle: 'Developer-entered inspection results.',
-              ),
-              CypherInput(
-                controller: _affectedFiles,
-                label: 'Affected files',
-                hint: 'lib/services/example.dart\nlib/screens/example.dart',
-                maxLines: 3,
-                minLines: 2,
-              ),
-              const SizedBox(height: CypherSpacing.space3),
-              CypherInput(
-                controller: _reason,
-                label: 'Reason',
-                hint: 'Root cause / motivation for the change',
-                maxLines: 3,
-                minLines: 2,
-              ),
-              const SizedBox(height: CypherSpacing.space3),
-              Wrap(
-                spacing: CypherSpacing.space2,
-                children: [
-                  for (final risk in ['low', 'medium', 'high'])
-                    ChoiceChip(
-                      label: Text('Risk: $risk'),
-                      selected: _risk == risk,
-                      onSelected: (_) => setState(() => _risk = risk),
-                    ),
-                ],
-              ),
-              CypherSectionHeader(
-                title: 'Proposed changes',
-                subtitle:
-                    'Files, summary, and the diff/patch where possible.',
-              ),
-              CypherInput(
-                controller: _summary,
-                label: 'Change summary',
-                hint: 'What the patch does, file by file',
-                maxLines: 4,
-                minLines: 2,
-              ),
-              const SizedBox(height: CypherSpacing.space3),
-              CypherInput(
-                controller: _diff,
-                label: 'Diff / patch',
-                hint: 'Unified diff or description of intended edits',
-                maxLines: 10,
-                minLines: 4,
-              ),
-              CypherSectionHeader(
-                title: 'Approval',
-                subtitle: 'Required before application.',
-              ),
-              CypherCard(
-                color: Colors.transparent,
-                padding: const EdgeInsets.all(CypherSpacing.space4),
+              CypherGlass(
+                padding: const EdgeInsets.all(CypherSpacing.space5),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Approve proposed changes'),
-                      subtitle: const Text(
-                          'Explicit developer approval for this exact patch.'),
-                      value: _approved,
-                      onChanged: (value) => setState(() => _approved = value),
+                    Icon(
+                      Icons.extension_off_outlined,
+                      size: 36,
+                      color: c.colors.textTertiary,
                     ),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                          'Applied via authorized development environment'),
-                      subtitle: const Text(
-                          'Attestation only — the app itself never writes '
-                          'source files.'),
-                      value: _appliedViaEnvironment,
-                      onChanged: _approved
-                          ? (value) =>
-                              setState(() => _appliedViaEnvironment = value)
-                          : null,
+                    const SizedBox(height: CypherSpacing.space4),
+                    Text(
+                      'Workspace bridge unavailable',
+                      textAlign: TextAlign.center,
+                      style: c.typography.titleMedium,
+                    ),
+                    const SizedBox(height: CypherSpacing.space2),
+                    Text(
+                      reason,
+                      textAlign: TextAlign.center,
+                      style: c.typography.bodyMedium,
+                    ),
+                    const SizedBox(height: CypherSpacing.space3),
+                    Text(
+                      'Developer Mode edits real files on your machine. A small '
+                      'bridge must run next to your source checkout; the app '
+                      'talks to it over adb. Nothing is faked.',
+                      textAlign: TextAlign.center,
+                      style: c.typography.bodySmall,
+                    ),
+                    const SizedBox(height: CypherSpacing.space4),
+                    Text(
+                      'adb reverse tcp:8791 tcp:8791',
+                      textAlign: TextAlign.center,
+                      style: c.typography.monoSmall.copyWith(
+                        color: c.colors.accent,
+                      ),
                     ),
                   ],
                 ),
               ),
-              CypherSectionHeader(
-                title: 'Validation',
-                subtitle: 'Record real results from each gate.',
-              ),
-              _ValidationDropdown(
-                label: 'Analyzer',
-                value: _validationAnalyzer,
-                onChanged: (v) => setState(() => _validationAnalyzer = v),
-              ),
-              _ValidationDropdown(
-                label: 'Tests',
-                value: _validationTests,
-                onChanged: (v) => setState(() => _validationTests = v),
-              ),
-              _ValidationDropdown(
-                label: 'Build',
-                value: _validationBuild,
-                onChanged: (v) => setState(() => _validationBuild = v),
-              ),
-              CypherSectionHeader(
-                title: 'Result',
-                subtitle: 'Honest outcome classification.',
-              ),
-              Wrap(
-                spacing: CypherSpacing.space2,
-                children: [
-                  for (final result in [
-                    'unverified', 'success', 'partial', 'failed'
-                  ])
-                    ChoiceChip(
-                      label: Text(result),
-                      selected: _result == result,
-                      onSelected: (_) => setState(() => _result = result),
-                    ),
-                ],
-              ),
-              CypherSectionHeader(
-                title: 'Checkpoint / revert',
-                subtitle:
-                    'Name the environment checkpoint to roll back to.',
-              ),
-              CypherInput(
-                controller: _checkpoint,
-                label: 'Checkpoint',
-                hint: 'e.g. git commit / tag created before applying',
-              ),
-              const SizedBox(height: CypherSpacing.space3),
-              CypherInput(
-                controller: _revertNote,
-                label: 'Revert note',
-                hint: 'How to undo this change safely',
-                maxLines: 3,
-                minLines: 2,
-              ),
-              const SizedBox(height: CypherSpacing.space5),
-              CypherButton(
-                label: 'Save session',
-                icon: Icons.save_outlined,
-                onPressed: _saveSession,
-                expand: true,
-              ),
-              const SizedBox(height: CypherSpacing.space2),
-              CypherButton(
-                label: 'Copy session report',
-                variant: CypherButtonVariant.secondary,
-                icon: Icons.copy_rounded,
-                onPressed: () async {
-                  final map = _sessionMap();
-                  final buffer = StringBuffer()
-                    ..writeln('Code Agent session')
-                    ..writeln('request: ${map['request']}')
-                    ..writeln('affected files: ${map['affectedFiles']}')
-                    ..writeln('reason: ${map['reason']}')
-                    ..writeln('risk: ${map['risk']}')
-                    ..writeln('summary: ${map['proposedChange']}')
-                    ..writeln('diff: ${map['diff']}')
-                    ..writeln('approved: ${map['approved']}')
-                    ..writeln(
-                        'applied via environment: ${map['appliedViaEnvironment']}')
-                    ..writeln('analyzer: ${map['validationAnalyzer']}')
-                    ..writeln('tests: ${map['validationTests']}')
-                    ..writeln('build: ${map['validationBuild']}')
-                    ..writeln('result: ${map['result']}')
-                    ..writeln('checkpoint: ${map['checkpoint']}')
-                    ..writeln('revert note: ${map['revertNote']}');
-                  await Clipboard.setData(
-                      ClipboardData(text: buffer.toString()));
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Session report copied to clipboard')),
-                  );
-                },
-                expand: true,
-              ),
-              CypherSectionHeader(
-                title: 'Saved sessions',
-                subtitle: 'Most recent first (max 20, developer-only).',
-              ),
-              _SessionList(
-                onLoad: _loadSession,
-                onNew: _newSession,
+              const SizedBox(height: CypherSpacing.space4),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: Icon(Icons.refresh_rounded,
+                    size: 18, color: c.colors.textSecondary),
+                label: Text(
+                  'Retry connection',
+                  style: c.typography.labelLarge
+                      .copyWith(color: c.colors.textSecondary),
+                ),
               ),
             ],
           ),
@@ -378,40 +310,186 @@ extension _CodeAgentBuildSection on _CodeAgentPageState {
   }
 }
 
-/// One validation gate selector (analyzer / tests / build).
-class _ValidationDropdown extends StatelessWidget {
-  final String label;
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  const _ValidationDropdown({
-    required this.label,
-    required this.value,
-    required this.onChanged,
+/// The single working surface of Developer Mode: one request box, one
+/// action, and one inline run report. Nothing else competes for attention.
+class _IdleView extends StatelessWidget {
+  const _IdleView({
+    required this.controller,
+    required this.phase,
+    required this.lastRequest,
+    required this.error,
+    required this.report,
+    required this.onExecute,
   });
+
+  final TextEditingController controller;
+  final _DevPhase phase;
+  final String? lastRequest;
+  final String? error;
+  final WorkspaceRunReport? report;
+  final VoidCallback onExecute;
+
+  bool get _busy => phase == _DevPhase.analyzing || phase == _DevPhase.editing;
+
+  String get _statusText {
+    switch (phase) {
+      case _DevPhase.analyzing:
+        return 'Planning… (inspecting workspace, choosing files)';
+      case _DevPhase.editing:
+        return 'Applying and validating… this can take a while';
+      default:
+        return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.cypher;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: CypherSpacing.space3),
-      child: Row(
+    return SafeArea(
+      child: Column(
         children: [
-          SizedBox(
-            width: 110,
-            child: Text(label, style: c.typography.settingsItemSubtitle),
-          ),
           Expanded(
-            child: Wrap(
-              spacing: CypherSpacing.space2,
-              children: [
-                for (final option in ['not tested', 'pass', 'fail'])
-                  ChoiceChip(
-                    label: Text(option),
-                    selected: value == option,
-                    onSelected: (_) => onChanged(option),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                CypherSpacing.space5,
+                CypherSpacing.space4,
+                CypherSpacing.space5,
+                CypherSpacing.space4,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'What should change?',
+                    style: c.typography.headlineSmall,
                   ),
-              ],
+                  const SizedBox(height: CypherSpacing.space2),
+                  Text(
+                    'Describe it in one line. The bridge plans the edit and '
+                    'waits for your confirmation before touching any file.',
+                    style: c.typography.bodyMedium,
+                  ),
+                  const SizedBox(height: CypherSpacing.space5),
+                  TextField(
+                    controller: controller,
+                    enabled: !_busy,
+                    maxLines: 4,
+                    minLines: 2,
+                    textInputAction: TextInputAction.done,
+                    style: c.typography.inputText,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Rename SettingsViewModel to '
+                          'SettingsPageModel and update its tests',
+                      hintStyle: c.typography.bodyMedium.copyWith(
+                        color: c.colors.textTertiary,
+                      ),
+                      filled: true,
+                      fillColor: c.colors.surface.withValues(alpha: 0.6),
+                      contentPadding:
+                          const EdgeInsets.all(CypherSpacing.space4),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(CypherSpacing.radiusLg),
+                        borderSide: BorderSide(color: c.colors.glassBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(CypherSpacing.radiusLg),
+                        borderSide: BorderSide(color: c.colors.glassBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(CypherSpacing.radiusLg),
+                        borderSide: BorderSide(color: c.colors.accent),
+                      ),
+                    ),
+                    onSubmitted: (_) => onExecute(),
+                  ),
+                  if (error != null)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(top: CypherSpacing.space4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 18,
+                            color: c.colors.error,
+                          ),
+                          const SizedBox(width: CypherSpacing.space2),
+                          Expanded(
+                            child: Text(
+                              error!,
+                              style: c.typography.bodyMedium.copyWith(
+                                color: c.colors.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (report != null) ...[
+                    const SizedBox(height: CypherSpacing.space5),
+                    _ReportCard(report: report!, lastRequest: lastRequest),
+                  ],
+                  if (_busy) ...[
+                    const SizedBox(height: CypherSpacing.space5),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: c.colors.accent,
+                          ),
+                        ),
+                        const SizedBox(width: CypherSpacing.space3),
+                        Expanded(
+                          child: Text(
+                            _statusText,
+                            style: c.typography.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              CypherSpacing.space5,
+              CypherSpacing.space3,
+              CypherSpacing.space5,
+              CypherSpacing.space4,
+            ),
+            child: FilledButton(
+              onPressed: _busy ? null : onExecute,
+              style: FilledButton.styleFrom(
+                backgroundColor: c.colors.accent,
+                foregroundColor: c.colors.textOnAccent,
+                disabledBackgroundColor:
+                    c.colors.accent.withValues(alpha: 0.4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: CypherSpacing.space4,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(CypherSpacing.radiusLg),
+                ),
+              ),
+              child: _busy
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: c.colors.textOnAccent,
+                      ),
+                    )
+                  : Text('Plan change', style: c.typography.buttonText),
             ),
           ),
         ],
@@ -420,79 +498,124 @@ class _ValidationDropdown extends StatelessWidget {
   }
 }
 
-/// Persisted sessions list bound to [CypherDeveloperConfig].
-class _SessionList extends StatelessWidget {
-  final ValueChanged<Map<String, dynamic>> onLoad;
-  final VoidCallback onNew;
+/// Inline run report: what changed, whether validation passed, and the raw
+/// bridge output — exactly what happened, nothing invented.
+class _ReportCard extends StatelessWidget {
+  const _ReportCard({required this.report, required this.lastRequest});
 
-  const _SessionList({required this.onLoad, required this.onNew});
+  final WorkspaceRunReport report;
+  final String? lastRequest;
 
   @override
   Widget build(BuildContext context) {
     final c = context.cypher;
-    return CypherCard(
-      color: Colors.transparent,
+    final ok = report.ok;
+    return CypherGlass(
       padding: const EdgeInsets.all(CypherSpacing.space5),
-      child: AnimatedBuilder(
-        animation: developerConfig,
-        builder: (context, _) {
-          final sessions = developerConfig.codeAgentSessions;
-          if (sessions.isEmpty) {
-            return Text(
-              'No saved sessions yet. Sessions persist developer-only and '
-              'can be reloaded to continue a workflow.',
-              style: c.typography.settingsItemSubtitle,
-            );
-          }
-          return Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              for (final session in sessions)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: CypherSpacing.space2),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              (session['request'] as String? ?? '')
-                                  .split('\n')
-                                  .first,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: c.typography.settingsItemTitle,
-                            ),
-                            Text(
-                              'result: ${session['result']} · approved: '
-                              '${session['approved'] == true}',
-                              style: c.typography.settingsItemSubtitle,
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Load session',
-                        icon: const Icon(Icons.folder_open_outlined,
-                            size: 20),
-                        onPressed: () {
-                          onLoad(session);
-                        },
-                      ),
-                      IconButton(
-                        tooltip: 'Delete session',
-                        icon: Icon(Icons.delete_outline_rounded,
-                            size: 20, color: c.colors.error),
-                        onPressed: () => developerConfig
-                            .deleteCodeAgentSession(
-                                session['id'] as String? ?? ''),
-                      ),
-                    ],
+              Icon(
+                ok ? Icons.check_circle_outline : Icons.error_outline,
+                size: 20,
+                color: ok ? c.colors.success : c.colors.error,
+              ),
+              const SizedBox(width: CypherSpacing.space2),
+              Expanded(
+                child: Text(
+                  ok ? 'Change applied' : 'Run failed',
+                  style: c.typography.titleSmall.copyWith(
+                    color: ok ? c.colors.success : c.colors.error,
                   ),
                 ),
+              ),
             ],
-          );
-        },
+          ),
+          if (lastRequest != null && lastRequest!.isNotEmpty) ...[
+            const SizedBox(height: CypherSpacing.space2),
+            Text(
+              lastRequest!,
+              style: c.typography.bodySmall.copyWith(
+                color: c.colors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (report.changedFiles.isNotEmpty) ...[
+            const SizedBox(height: CypherSpacing.space4),
+            Text('Changed files', style: c.typography.labelMedium),
+            const SizedBox(height: CypherSpacing.space1),
+            for (final file in report.changedFiles)
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: CypherSpacing.space2,
+                  bottom: CypherSpacing.space1,
+                ),
+                child: Text(
+                  file,
+                  style: c.typography.monoSmall.copyWith(
+                    color: c.colors.textSecondary,
+                  ),
+                ),
+              ),
+          ],
+          const SizedBox(height: CypherSpacing.space4),
+          Wrap(
+            spacing: CypherSpacing.space2,
+            runSpacing: CypherSpacing.space2,
+            children: [
+              _StatusChip(
+                  label: 'analyzer', value: report.validation.analyzer),
+              _StatusChip(label: 'tests', value: report.validation.tests),
+              _StatusChip(label: 'format', value: report.validation.format),
+            ],
+          ),
+          if (report.report.isNotEmpty) ...[
+            const SizedBox(height: CypherSpacing.space3),
+            SelectableText(
+              report.report,
+              style: c.typography.monoSmall.copyWith(
+                color: c.colors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Small pass/fail chip for one validation dimension. Anything that is not
+/// an explicit `pass` (including `not run`) renders neutral or failed —
+/// never as a fake success.
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cypher;
+    final passed = value == 'pass';
+    final failed = value.contains('fail') || value.contains('error');
+    final color = passed
+        ? c.colors.success
+        : (failed ? c.colors.error : c.colors.textTertiary);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: CypherSpacing.space3,
+        vertical: CypherSpacing.space1,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(CypherSpacing.radiusFull),
+      ),
+      child: Text(
+        '$label · $value',
+        style: c.typography.labelSmall.copyWith(color: color),
       ),
     );
   }

@@ -46,6 +46,9 @@ class MainActivity : FlutterFragmentActivity() {
             }
         )
 
+        // Embedded 4AIs/OpenClaw agent-core bridge (the real execution engine).
+        com.crsk.openclaw.cypher.CypherAgentCore.get(this)
+            .bind(flutterEngine.dartExecutor.binaryMessenger)
         registerAccessibilityChannel(flutterEngine, this)
         registerFilesChannel(flutterEngine)
     }

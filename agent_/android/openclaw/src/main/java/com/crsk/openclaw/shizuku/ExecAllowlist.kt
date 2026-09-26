@@ -1,0 +1,99 @@
+package com.crsk.openclaw.shizuku
+
+/**
+ * Strict allowlist for commands executed via Shizuku at uid 2000 (ADB-level).
+ *
+ * Without this, the /exec route on :3001 is a full device-compromise primitive:
+ * any app with INTERNET permission could curl it and run arbitrary shell at ADB
+ * level. Even with bearer auth in front, prompt-injection in screen content the
+ * agent reads (web pages, emails, OCR'd images) can convince the LLM to
+ * an `sh -c` payload that recursively wipes /sdcard — the allowlist is the last line of defense.
+ *
+ * Allowed: am, pm, input, dumpsys, settings, cmd, wm, screencap, monkey.
+ * Denied: sh, su, mount, fully-qualified paths to non-allowlisted binaries,
+ *         `am start` to known-dangerous Settings activities (dev/debug toggle).
+ */
+object ExecAllowlist {
+
+    private val ALLOWED_BINARIES = setOf(
+        "am", "pm", "input", "dumpsys", "settings", "cmd", "wm", "screencap", "monkey",
+    )
+
+    /** Substrings inside `am start -n <component>` that we refuse outright. */
+    private val BLOCKED_AM_COMPONENT_SUBSTRINGS = listOf(
+        "DevelopmentSettings",
+        "DebugApp",
+        "AdbWireless",
+        "DevSettings",
+    )
+
+    /**
+     * Global/secure settings keys the agent must never flip. Same threat class as
+     * the `am start -> DevelopmentSettings` block above, but reachable via the
+     * allowed `settings put` binary: enabling ADB (wired or wireless), unlocking
+     * developer options, or whitelisting unknown-source installs would each turn a
+     * single prompt-injected exec into a persistent device-compromise foothold.
+     */
+    private val BLOCKED_SETTINGS_KEYS = setOf(
+        "adb_enabled",
+        "adb_wifi_enabled",
+        "development_settings_enabled",
+        "install_non_market_apps",
+        "verifier_verify_adb_installs",
+        "package_verifier_enable",
+        "stay_on_while_plugged_in",
+    )
+
+    sealed class Result {
+        object Allowed : Result()
+        data class Denied(val reason: String) : Result()
+    }
+
+    fun validate(argv: List<String>): Result {
+        if (argv.isEmpty()) return Result.Denied("empty argv")
+        val cmd = argv[0]
+
+        // Resolve binary name. If the caller passed `/system/bin/am`, the basename
+        // is `am`; if they passed `sh` or `/system/bin/sh`, we reject below.
+        val basename = if ('/' in cmd) cmd.substringAfterLast('/') else cmd
+        if (basename !in ALLOWED_BINARIES) {
+            return Result.Denied("binary not allowed: $cmd")
+        }
+
+        // Sanity-check arguments. Defends against argv-smuggling — e.g. `am`
+        // calling out to `sh` via `instrument` or similar.
+        for (arg in argv) {
+            // Newlines in args almost always mean someone's trying to inject a
+            // second command via heredoc or pipe-substitution. Reject.
+            if ('\n' in arg || '\u0000' in arg) {
+                return Result.Denied("control char in argv")
+            }
+        }
+
+        // Block `am start -n` to known-dangerous Settings activities. Catches the
+        // "agent enables USB debugging via am" attack class.
+        if (basename == "am" && argv.size >= 2 && argv[1] == "start") {
+            for ((i, a) in argv.withIndex()) {
+                if (a == "-n" && i + 1 < argv.size) {
+                    val component = argv[i + 1]
+                    if (BLOCKED_AM_COMPONENT_SUBSTRINGS.any { it in component }) {
+                        return Result.Denied("am start to sensitive activity blocked: $component")
+                    }
+                }
+            }
+        }
+
+        // Block `settings put {global,secure,system} <key> ...` for keys that
+        // toggle ADB / developer mode / unknown-source installs. Closes the
+        // non-`am` path to the same "silently unlock the device" attack class.
+        if (basename == "settings" && argv.size >= 3 && argv[1] == "put") {
+            // argv: settings put <namespace> <key> <value>
+            val key = argv.getOrNull(3)
+            if (key != null && key in BLOCKED_SETTINGS_KEYS) {
+                return Result.Denied("settings put to protected key blocked: $key")
+            }
+        }
+
+        return Result.Allowed
+    }
+}

@@ -5,37 +5,37 @@ import 'package:flutter/material.dart';
 
 /// Base color palette - raw color values used to construct semantic tokens
 class CypherColorPalette {
-  // Warm off-white scale (text, surfaces)
-  static const Color warmWhite50 = Color(0xFFFDFBF7);
-  static const Color warmWhite100 = Color(0xFFF7F3EE);
-  static const Color warmWhite200 = Color(0xFFEDE7DB);
-  static const Color warmWhite300 = Color(0xFFE2DBCD);
-  static const Color warmWhite400 = Color(0xFFD6CCBE);
-  static const Color warmWhite500 = Color(0xFFC8BDAF);
+  // Off-white scale (text, surfaces) — neutral, ChatGPT-like calm whites
+  static const Color warmWhite50 = Color(0xFFFCFCFA);
+  static const Color warmWhite100 = Color(0xFFF7F7F5);
+  static const Color warmWhite200 = Color(0xFFF0F0EE);
+  static const Color warmWhite300 = Color(0xFFE6E6E3);
+  static const Color warmWhite400 = Color(0xFFDCDCD8);
+  static const Color warmWhite500 = Color(0xFFCFCFC9);
 
-  // Warm gray scale (secondary text, borders, disabled)
-  static const Color warmGray50 = Color(0xFFFAF8F3);
-  static const Color warmGray100 = Color(0xFFF0EBE3);
-  static const Color warmGray200 = Color(0xFFE1DACE);
-  static const Color warmGray300 = Color(0xFFD0C7BA);
-  static const Color warmGray400 = Color(0xFFB8AFA0);
-  static const Color warmGray500 = Color(0xFF9E9484);
-  static const Color warmGray600 = Color(0xFF82796A);
-  static const Color warmGray700 = Color(0xFF675F52);
-  static const Color warmGray800 = Color(0xFF4D473C);
-  static const Color warmGray900 = Color(0xFF342F26);
+  // Neutral gray scale (secondary text, borders, disabled)
+  static const Color warmGray50 = Color(0xFFF8F8F7);
+  static const Color warmGray100 = Color(0xFFF1F1EF);
+  static const Color warmGray200 = Color(0xFFE4E4E1);
+  static const Color warmGray300 = Color(0xFFD6D6D2);
+  static const Color warmGray400 = Color(0xFFB4B4AE);
+  static const Color warmGray500 = Color(0xFF9A9A93);
+  static const Color warmGray600 = Color(0xFF7C7C75);
+  static const Color warmGray700 = Color(0xFF5D5D57);
+  static const Color warmGray800 = Color(0xFF40403C);
+  static const Color warmGray900 = Color(0xFF2B2B27);
 
-  // Charcoal/near-black scale (backgrounds, primary surfaces)
-  static const Color charcoal50 = Color(0xFF2A2724);
-  static const Color charcoal100 = Color(0xFF23201E);
-  static const Color charcoal200 = Color(0xFF1C1A18);
-  static const Color charcoal300 = Color(0xFF161413);
-  static const Color charcoal400 = Color(0xFF100F0E);
-  static const Color charcoal500 = Color(0xFF0B0A09);
-  static const Color charcoal600 = Color(0xFF080707); // Primary background
-  static const Color charcoal700 = Color(0xFF050404);
-  static const Color charcoal800 = Color(0xFF030303);
-  static const Color charcoal900 = Color(0xFF010101);
+  // Near-black scale (backgrounds, primary surfaces) — deep neutral
+  static const Color charcoal50 = Color(0xFF2C2C2E);
+  static const Color charcoal100 = Color(0xFF26262A);
+  static const Color charcoal200 = Color(0xFF202023);
+  static const Color charcoal300 = Color(0xFF1B1B1E);
+  static const Color charcoal400 = Color(0xFF161619);
+  static const Color charcoal500 = Color(0xFF111114);
+  static const Color charcoal600 = Color(0xFF0E0E10); // Primary background
+  static const Color charcoal700 = Color(0xFF0A0A0C);
+  static const Color charcoal800 = Color(0xFF070708);
+  static const Color charcoal900 = Color(0xFF040405);
 
   // Crimson accent family (default theme)
   static const Color crimson50 = Color(0xFF3D0C10);
@@ -245,8 +245,13 @@ class CypherColorTokens {
   Color get accentLight => _accent[300]!;
   Color get accentDark => _accent[700]!;
   Color get accentMuted => _accent[200]!.withOpacity(0.6);
-  Color get accentContainer => _accent[100]!.withOpacity(0.8);
-  Color get accentOnContainer => _accent[900]!;
+  // Mode-aware containers: dark mode uses the deep tinted surface with the
+  // bright on-color; light mode uses a faint accent wash with the deep
+  // on-color — both keep avatar/chip text comfortably readable.
+  Color get accentContainer => isDark
+      ? _accent[100]!.withOpacity(0.8)
+      : _accent[500]!.withOpacity(0.10);
+  Color get accentOnContainer => isDark ? _accent[900]! : _accent[700]!;
 
   // State tokens
   Color get success => CypherColorPalette.success500;

@@ -10,7 +10,7 @@ import '../../services/settings_service.dart';
 
 /// Developer Theme Studio (Phase 8).
 ///
-/// Bound exclusively to the existing [ThemeController] token architecture â€”
+/// Bound exclusively to the existing [ThemeController] token architecture —
 /// presets, custom accent, gradient style, intensity and blur are the real
 /// persisted values the whole app renders with. The token inspector is
 /// read-only evidence of what the tokens resolve to; it does not bypass the
@@ -246,7 +246,7 @@ class _PresetGrid extends StatelessWidget {
 class _CustomAccentControls extends StatelessWidget {
   final ThemeController controller;
 
-  /// Curated, professional seeds (restrained â€” no neon).
+  /// Curated, professional seeds (restrained — no neon).
   static const List<Color> curated = [
     Color(0xFF8C1D2C), // deep crimson
     Color(0xFF6B2737), // burgundy wine
@@ -286,7 +286,7 @@ class _CustomAccentControls extends StatelessWidget {
           const SizedBox(height: CypherSpacing.space3),
           Text(
             controller.isCustomAccent
-                ? 'Custom accent active â€” derived shades update everywhere.'
+                ? 'Custom accent active — derived shades update everywhere.'
                 : 'Using the preset accent family.',
             style: c.typography.settingsItemSubtitle,
           ),
@@ -475,7 +475,7 @@ class _GradientStyleSelector extends StatelessWidget {
 }
 
 /// Fine controls. Position and flow are derived from the chosen style by the
-/// token system itself â€” no separate fake sliders.
+/// token system itself — no separate fake sliders.
 class _GradientFineControls extends StatelessWidget {
   final ThemeController controller;
 

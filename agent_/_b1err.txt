@@ -1,0 +1,23 @@
+Note: C:\Users\Hp\AppData\Local\Pub\Cache\hosted\pub.dev\android_intent_plus-5.3.1\android\src\main\java\dev\fluttercommunity\plus\androidintent\MethodCallHandlerImpl.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+lib/screens/home_screen.dart:778:37: Error: Cannot invoke a non-'const' constructor where a const expression is expected.
+Try using a constructor or factory that is 'const'.
+                _messages.add(const ChatMessage(role: 'assistant', content: ''));
+                                    ^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command 'C:\src\flutter\bin\flutter.bat'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 15s
+Gradle task assembleDebug failed with exit code 1

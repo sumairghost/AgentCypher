@@ -16,6 +16,7 @@ import '../widgets/cypher_composer.dart';
 import '../widgets/model_selector_sheet.dart';
 import '../services/chat_history_service.dart';
 import '../core/agent/agent_runtime.dart';
+import '../core/agent/native_agent_core.dart';
 import '../core/agent/fast_router.dart';
 import '../core/agent/tool.dart';
 import '../services/notification_service.dart';
@@ -61,9 +62,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     onApproval: _approveToolUse,
   );
 
+  /// Embedded 4AIs/OpenClaw agent core — the real execution engine for
+  /// multi-step tasks (observe → act → observe → verify). The legacy
+  /// [CypherAgentRuntime] stays as a fallback when the core is unavailable.
+  final NativeAgentCore _agentCore = NativeAgentCore();
+  StreamSubscription<AgentCoreEvent>? _coreEventsSub;
+
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
   bool _isListening = false;
+
+  /// Whether the CURRENT turn was initiated by the voice pipeline.
+  ///
+  /// Single authority for auto-speaking replies: a turn that started from the
+  /// microphone may have its reply spoken; typed, suggestion-chip, and
+  /// overlay-originated turns are always TEXT-ONLY. Consumed at the start of
+  /// every [_sendMessage] so it can never leak into a later typed turn.
+  bool _speakThisTurn = false;
 
   // Custom switch state: 'chat' or 'agent'
   String _mode = 'chat';
@@ -88,6 +103,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _startOverlayHistorySync();
     // Register as the handler for overlay bubble tasks
     onOverlayTask = (task) => _sendMessage(task);
+    // Listen to the embedded agent core (gateway status, approvals).
+    _coreEventsSub = _agentCore.events.listen(_onAgentCoreEvent);
   }
 
   Future<void> _initServices() async {
@@ -136,6 +153,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _sendMessage(String text) async {
     if (!mounted || text.trim().isEmpty) return;
+
+    // Consume the voice-turn flag here: it is the single decision point for
+    // speaking. Only turns that entered through the microphone get spoken;
+    // typed and overlay turns are always text-only.
+    final speakReply = _speakThisTurn;
+    _speakThisTurn = false;
 
     final userMessage = ChatMessage(role: 'user', content: text.trim());
     setState(() {
@@ -312,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             if (mounted) {
               setState(() {
                 _messages.add(
-                  ChatMessage(role: 'assistant', content: 'â³ $msg'),
+                  ChatMessage(role: 'assistant', content: '⏳ $msg'),
                 );
               });
               _scrollToBottom();
@@ -329,8 +352,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ? action.response
                         : (result.details ?? 'Done.'))
                   : (action.response.isNotEmpty
-                        ? '${action.response}\n\nâš ï¸ ${result.details}'
-                        : 'âš ï¸ ${result.details}'),
+                        ? '${action.response}\n\n⚠️ ${result.details}'
+                        : '⚠️ ${result.details}'),
               actionResult: result,
             ),
           );
@@ -351,9 +374,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           );
         }
         await _saveSession();
-      } else {
-        // Plain text response, we already rendered it, just speak it
-        _voiceService.speak(accumulated);
+      } else if (speakReply && accumulated.trim().isNotEmpty) {
+        // Voice-initiated turn: speak the completed reply.
+        unawaited(_voiceService.speak(accumulated));
       }
     } catch (e) {
       if (mounted) {
@@ -506,14 +529,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             itemCount: plan.steps.length,
             itemBuilder: (context, index) {
               final step = plan.steps[index];
-              final flag = step.requiresConfirmation ? ' âš ï¸' : '';
+              final flag = step.requiresConfirmation ? ' ⚠️' : '';
               return ListTile(
                 dense: true,
                 leading: Text('${index + 1}.'),
                 title: Text('${step.intent}$flag'),
                 subtitle: Text(
                   '${step.action}'
-                  '${step.expectedResult.isEmpty ? '' : ' â†’ ${step.expectedResult}'}',
+                  '${step.expectedResult.isEmpty ? '' : ' → ${step.expectedResult}'}',
                 ),
               );
             },
@@ -572,6 +595,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
       await _showTaskProgressOverlay('Starting: $goal');
+      // Preferred execution path: the embedded 4AIs/OpenClaw agent core
+      // (observe → act → observe → verify → recover). The legacy local
+      // runtime only runs when the core is unavailable (not bootstrapped
+      // or the on-device gateway failed to start).
+      if (await _ensureCoreReady()) {
+        await _runAgentCoreTask(goal);
+        return;
+      }
+      developer.log(
+        'Agent core unavailable — falling back to legacy runtime',
+        name: 'AgentCypher.FastRouter',
+      );
       developer.log('Agent path selected', name: 'AgentCypher.FastRouter');
       final result = await _agentRuntime.runTask(
         goal,
@@ -582,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (mounted) {
             setState(() {
               _messages.add(
-                ChatMessage(role: 'assistant', content: 'â³ $message'),
+                ChatMessage(role: 'assistant', content: '⏳ $message'),
               );
             });
             _scrollToBottom();
@@ -627,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ? (result.summary.isNotEmpty
                       ? result.summary
                       : 'Task completed.')
-                : 'âš ï¸ ${result.summary.isNotEmpty ? result.summary : 'Task failed.'}',
+                : '⚠️ ${result.summary.isNotEmpty ? result.summary : 'Task failed.'}',
           ),
         );
       });
@@ -646,7 +681,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _messages.add(
           ChatMessage(
             role: 'assistant',
-            content: 'âš ï¸ Task failed: ${error.toString().replaceFirst('Exception: ', '')}',
+            content: '⚠️ Task failed: ${error.toString().replaceFirst('Exception: ', '')}',
           ),
         );
       });
@@ -659,6 +694,185 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }));
       }
     }
+  }
+
+  /// Handles screen-level agent-core events (approvals surface as dialogs;
+  /// task lifecycle is handled per-run inside [_runAgentCoreTask]).
+  Future<void> _onAgentCoreEvent(AgentCoreEvent event) async {
+    if (event is! AgentCoreApproval || !mounted) return;
+    final allow = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Agent approval · ${event.riskLevel} risk'),
+        content: Text(
+          '${event.summary}\n\n${event.detail.isEmpty ? 'The agent wants to perform an action.' : event.detail}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Deny'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+    unawaited(_agentCore.resolveApproval(event.id, allow: allow == true));
+  }
+
+  /// Makes sure the embedded agent core is bootstrapped and its gateway is
+  /// running. Returns false (with a chat message explaining why) when the
+  /// caller should fall back to the legacy runtime.
+  Future<bool> _ensureCoreReady() async {
+    try {
+      if (!await _agentCore.isBootstrapped()) {
+        if (mounted) {
+          setState(() {
+            _messages.add(
+              ChatMessage(
+                role: 'assistant',
+                content:
+                    '🧩 The agent engine is not set up on this device '
+                    'yet. Opening the one-time setup wizard: enable its '
+                    'accessibility service, then let it install the Node runtime '
+                    '(~3 min).',
+              ),
+            );
+          });
+          _scrollToBottom();
+        }
+        await _agentCore.openCoreSetup();
+        return false;
+      }
+      final status = await _agentCore.startGateway();
+      final state = status?['state'];
+      if (state != 'running') {
+        if (mounted) {
+          setState(() {
+            _messages.add(
+              ChatMessage(
+                role: 'assistant',
+                content:
+                    '⚠️ Agent core gateway failed to start '
+                    '(${status?['error'] ?? state ?? 'unavailable'}). '
+                    'Falling back to the built-in runtime.',
+              ),
+            );
+          });
+          _scrollToBottom();
+        }
+        return false;
+      }
+      return true;
+    } catch (error) {
+      developer.log(
+        'Agent core readiness check failed: $error',
+        name: 'AgentCypher.AgentCore',
+      );
+      return false;
+    }
+  }
+
+  /// Runs a task through the embedded 4AIs/OpenClaw core, streaming its
+  /// chunks (text / act tool calls / lifecycle) into the chat.
+  Future<void> _runAgentCoreTask(String goal) async {
+    final completer = Completer<void>();
+    final textBuffer = StringBuffer();
+    int assistantIndex = -1;
+
+    late final StreamSubscription<AgentCoreEvent> sub;
+    sub = _agentCore.events.listen((event) async {
+      if (event is AgentCoreChunk) {
+        switch (event.kind) {
+          case 'text':
+            if (assistantIndex < 0) {
+              setState(() {
+                _messages.add(ChatMessage(role: 'assistant', content: ''));
+                assistantIndex = _messages.length - 1;
+              });
+            }
+            textBuffer.write(event.text);
+            if (mounted && assistantIndex >= 0) {
+              setState(() {
+                _messages[assistantIndex] = ChatMessage(
+                  role: 'assistant',
+                  content: textBuffer.toString(),
+                );
+              });
+            }
+            break;
+          case 'toolStart':
+            if (mounted) {
+              setState(() {
+                _messages.add(
+                  ChatMessage(
+                    role: 'assistant',
+                    content: '🔧 ${event.name} ${event.argsJson}',
+                  ),
+                );
+              });
+              _scrollToBottom();
+            }
+            _sendOverlayEvent('OVERLAY_PROGRESS', '${event.name} ${event.argsJson}');
+            break;
+          case 'toolResult':
+            if (mounted) {
+              setState(() {
+                _messages.add(
+                  ChatMessage(
+                    role: 'assistant',
+                    content: '${event.ok ? '✅' : '❌'} ${event.name}: ${event.text}',
+                  ),
+                );
+              });
+              _scrollToBottom();
+            }
+            break;
+          case 'error':
+            if (mounted) {
+              setState(() {
+                _messages.add(
+                  ChatMessage(role: 'assistant', content: '⚠️ ${event.text}'),
+                );
+              });
+              _scrollToBottom();
+            }
+            break;
+          default:
+            break;
+        }
+      } else if (event is AgentCoreTaskState) {
+        await sub.cancel();
+        if (!completer.isCompleted) completer.complete();
+        if (mounted) {
+          setState(() {
+            _messages.add(
+              ChatMessage(
+                role: 'assistant',
+                content: event.state == 'failed'
+                    ? '⚠️ Agent failed: ${event.error}'
+                    : event.state == 'cancelled'
+                        ? '🛑 Task cancelled.'
+                        : '✅ Agent core finished the task.',
+              ),
+            );
+          });
+          _scrollToBottom();
+          unawaited(_saveSession());
+        }
+      }
+    });
+
+    final submitted = await _agentCore.submitTask(goal);
+    if (!submitted) {
+      await sub.cancel();
+      if (!completer.isCompleted) completer.complete();
+      throw Exception('Agent core rejected the task submission');
+    }
+    _sendOverlayEvent('OVERLAY_PROGRESS', 'Agent core running: $goal');
+    await completer.future;
   }
 
   Future<void> _showTaskProgressOverlay(String message) async {
@@ -743,6 +957,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       await _voiceService.startListening(
         onResult: (text) {
+          // Voice-originated turn: only this turn's reply may be spoken.
+          _speakThisTurn = true;
           if (mounted) unawaited(_sendMessage(text));
         },
         onDone: () {
@@ -795,6 +1011,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _textController.dispose();
     _scrollController.dispose();
     _voiceService.dispose();
+    _coreEventsSub?.cancel();
+    _agentCore.dispose();
     super.dispose();
   }
 
@@ -1065,7 +1283,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                       const SizedBox(width: CypherSpacing.space3),
                       Text(
-                        'Thinkingâ€¦',
+                        'Thinking…',
                         style: context.cypher.typography.chatMeta,
                       ),
                       const SizedBox(width: CypherSpacing.space2),
@@ -1117,6 +1335,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _chatStreamStopped = null;
     _agentRuntime.cancelTask(_agentRuntime.activeTaskId);
     _actionHandler.cancelTask();
+    unawaited(_agentCore.cancelTask());
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -1179,7 +1398,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       backgroundColor: c.colors.surface,
       child: Column(
         children: [
-          // Drawer Header
+          // Drawer header: Cypher logo + wordmark, theme-aware.
           Container(
             padding: const EdgeInsets.only(
               top: 60,
@@ -1205,23 +1424,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
 
-          // New Chat Button
+          // New chat: single accent-filled action, token-driven foreground.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: c.colors.accent,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
               ),
               child: Material(
                 color: Colors.transparent,
@@ -1231,21 +1441,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     _startNewChat();
                   },
                   borderRadius: BorderRadius.circular(16),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.add_comment_rounded,
-                          color: Colors.white,
+                          color: c.colors.textOnAccent,
                           size: 16,
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'New Chat',
+                          'New chat',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: c.colors.textOnAccent,
                             fontWeight: FontWeight.bold,
                             fontSize: 13.5,
                           ),
@@ -1260,17 +1470,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
           const Divider(indent: 16, endIndent: 16, height: 20),
 
-          // Section CHAT HISTORY
+          // Section: HISTORY
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'CHAT HISTORY',
+                'HISTORY',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
-                  color: Theme.of(context).primaryColor,
+                  color: c.colors.textTertiary,
                   letterSpacing: 1.5,
                 ),
               ),
@@ -1287,7 +1497,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Text(
                       'No recent chats',
                       style: TextStyle(
-                        color: isDark ? Colors.grey[800] : Colors.grey[400],
+                        color: c.colors.textTertiary,
                         fontSize: 12,
                       ),
                     ),
@@ -1332,8 +1542,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           Icons.chat_bubble_outline_rounded,
                           size: 15,
                           color: isCurrent
-                              ? Theme.of(context).colorScheme.primary
-                              : (isDark ? Colors.grey[600] : Colors.grey[500]),
+                              ? c.colors.accent
+                              : c.colors.textTertiary,
                         ),
                         title: Text(
                           session.title,
@@ -1352,7 +1562,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           icon: Icon(
                             Icons.delete_outline_rounded,
                             size: 16,
-                            color: Colors.redAccent.withOpacity(0.7),
+                            color: c.colors.error.withOpacity(0.7),
                           ),
                           onPressed: () async {
                             await ChatHistoryService.deleteSession(session.id);
@@ -1382,7 +1592,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             horizontalTitleGap: 8,
             leading: Icon(
               Icons.history_rounded,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: c.colors.textSecondary,
               size: 20,
             ),
             title: Text('Task History', style: textStyle),
@@ -1398,7 +1608,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             horizontalTitleGap: 8,
             leading: Icon(
               Icons.settings_rounded,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: c.colors.textSecondary,
               size: 20,
             ),
             title: Text('Settings', style: textStyle),

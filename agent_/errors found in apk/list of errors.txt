@@ -1,0 +1,7 @@
+*ACCESSIBLITY SETTINGS*
+
+1. enable floating agent icon doesn't do anything after enabling
+2. in the api provider section, in the active provider drop down box there is an error- right overflowed by 104 pixels
+2.1. developer section, apply and validate button gives an error and says right overflowed by 45 pixels
+2.2. in the shizuku running box it says right overflowed by 13 pixels
+2.3. in the task history every task box says right overflowed by 33 pixels
